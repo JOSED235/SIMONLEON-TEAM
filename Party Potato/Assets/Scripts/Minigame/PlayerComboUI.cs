@@ -74,6 +74,14 @@ public class PlayerComboUI : MonoBehaviour
                 comboText.transform.localScale = originalScale * popScaleMultiplier;
                 
                 UpdateUI();
+
+                // Si aumentó el combo o volvió a uno mayor a 0, nos aseguramos que el alfa esté en 1
+                if (lastCombo > 0)
+                {
+                    Color c = comboText.color;
+                    c.a = 1f;
+                    comboText.color = c;
+                }
             }
 
             // Ocultar texto gradualmente o al terminar el temporizador
@@ -82,9 +90,21 @@ public class PlayerComboUI : MonoBehaviour
                 if (hideTimer > 0)
                 {
                     hideTimer -= Time.deltaTime;
+                    
+                    // Efecto de desvanecimiento (Fade Out) en la segunda mitad del temporizador
+                    if (hideTimer < showMissDuration * 0.5f)
+                    {
+                        Color c = comboText.color;
+                        c.a = Mathf.Lerp(0f, 1f, hideTimer / (showMissDuration * 0.5f));
+                        comboText.color = c;
+                    }
+
                     if (hideTimer <= 0)
                     {
                         comboText.text = "";
+                        Color c = comboText.color;
+                        c.a = 1f; // Restaurar para la próxima vez
+                        comboText.color = c;
                     }
                 }
             }

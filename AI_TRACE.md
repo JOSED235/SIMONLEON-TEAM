@@ -208,3 +208,39 @@
 - Archivos modificados:
   - Party Potato/Assets/Scripts/Minigame/PlayerComboUI.cs
 - Resumen: Se integraron los eventos `GameEvents.OnHitResolved` y `GameEvents.OnPlayerMiss` en `PlayerComboUI.cs`. Ahora el texto copia los colores definidos en el `PlayerInputController` segun la calidad del golpe. Cuando un jugador falla, el texto se vuelve rojo, dice "Miss!" y activa un temporizador (`showMissDuration`) antes de volver a ocultarse para que el feedback de error sea visible y evidente para el jugador.
+
+## 2026-10-10 - Animacion de Fade para Miss Combo y nueva UI de Papa Dinamica
+- Participante: Faiber Piedrahita
+- Tarea: 1) Agregar animación de difuminado (fade out) al mensaje de "Miss!" del combo. 2) Reemplazar el slider del medidor de presión por una UI de la papa en forma de sprites, que aparece debajo del puntaje del jugador que la tiene, se enoja según la presión, y muestra una papa feliz (`Potato_happy_03`) al explotar.
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/PlayerComboUI.cs
+  - Party Potato/Assets/Scripts/Minigame/PressureMeterUI.cs
+- Resumen: En `PlayerComboUI.cs` se modificó el método `Update` para reducir progresivamente el canal Alpha del texto de "Miss" a la mitad de su tiempo visible, creando el efecto fade. En `PressureMeterUI.cs` se eliminaron las referencias al antiguo UI Slider y se agregaron referencias para `Image` de P1 y P2. Dependiendo de quién tenga la papa (`playerHoldingPotato`), el script habilita su respectiva imagen, calcula el índice del arreglo de sprites según la presión (del más tranquilo al más enojado), y si la papa explota, muestra el sprite de explosión asignado.
+
+## 2026-10-10 - Slider Handle reactivo y correccion del PressureMeterUI
+- Participante: Faiber Piedrahita
+- Tarea: Combinar la funcionalidad del Slider original con el nuevo sistema de sprites reactivos, asegurando que la bolita del slider ("Handle") use la misma papa dinamica que aparece en los perfiles de los jugadores.
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/PressureMeterUI.cs
+- Resumen: Se actualizo `PressureMeterUI.cs` para reintroducir el manejo del Slider visual y su `fillImage`. Ademas, se añadio un campo `sliderHandleImage` de tipo `Image` que recibe la misma actualizacion dinamica de sprites (`potato_iddle_X` y `Potato_happy_03`) que reciben las imagenes de los puntajes, manteniendose sincronizadas entre si a medida que cambia la presion.
+
+## 2026-10-10 - Papa Unica que mira al jugador empujado
+- Participante: Faiber Piedrahita
+- Tarea: Simplificar la UI de la papa para usar una unica imagen (puede ser el Handle del slider) que no solo cambie de enojo, sino que "rote" (se voltee horizontalmente) para mirar hacia el jugador que la tiene (el que esta siendo empujado).
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/PressureMeterUI.cs
+- Resumen: Se eliminaron las referencias a papas separadas por jugador. Ahora existe un unico campo `potatoImage` que recibe el sprite enojado correspondiente y cuya escala X se invierte (`1` o `-1`) dinamicamente. Esto genera el efecto de que la misma papa se da la vuelta para encarar siempre al jugador que se encuentra en peligro (el que actualmente tiene la papa).
+
+## 2026-10-10 - Teletransporte de Papa en Puntaje y Animacion de Explosion en Score
+- Participante: Faiber Piedrahita
+- Tarea: Agregar una papa adicional debajo de los puntajes que se "teletransporte" rapidamente hacia el jugador que la tenga (usando los mismos sprites dinamicos de enojo). Ademas, añadir un efecto visual en el que el puntaje del jugador perdedor tiemble y se ponga rojo cuando la papa explote.
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/PressureMeterUI.cs
+  - Party Potato/Assets/Scripts/Minigame/PlayerScoreUI.cs
+- Resumen: En `PressureMeterUI.cs` se añadio logica para una `floatingPotatoImage` que hace un Lerp rapido (`teleportSpeed`) entre `p1TargetPosition` y `p2TargetPosition` dependiendo de quien tenga la papa, copiando el estado visual y la rotacion de la papa del slider. En `PlayerScoreUI.cs` se incluyo una suscripcion a `GameEvents.OnPotatoExploded`; cuando el jugador afectado explota, su texto de puntaje tiembla usando `Random.Range` sobre la posicion anclada y se tiñe de rojo, regresando suavemente a su estado original.
+
+## 2026-10-10 - Fondo del Nivel (Background)
+- Participante: Faiber Piedrahita
+- Tarea: Configurar el asset "background" como fondo visual del nivel en la escena de Unity.
+- Archivos modificados: N/A (Configuracion directa en la escena de Unity).
+- Resumen: Se instruyo al usuario sobre como integrar el asset 2D de fondo en la jerarquia, ajustar su `Order in Layer` para evitar superposicion con los personajes/UI, y escalar su tamaño para que cubra completamente el espacio de juego visible por la camara principal.
