@@ -1,14 +1,21 @@
 ## 2026-10-09 - Pivote a Minijuego Musical & RhythmManager
 
 - El equipo pivota de juego de tablero 2.5D a un minijuego de duelo musical.
-- Se aÃ±adiÃ³ la pista MIDI de prueba (Billie Jean) a la carpeta de Assets/Audio.
-- Se creÃ³ `RhythmManager.cs` que lee `AudioSettings.dspTime` y calcula ventanas de acierto con BPM (117) exactos.
-- Se agregÃ³ modo Debug para imprimir por consola cuando entra el beat musical.
-- Se generÃ³ y aÃ±adiÃ³ un archivo `.gitignore` optimizado para Unity en la raÃ­z del proyecto para evitar subir archivos temporales (`Library/`, `Temp/`, `.csproj`, etc.) al repositorio.
-- Se implementÃ³ `BombController.cs` con lÃ³gica de interpolaciÃ³n musical (`Mathf.PingPong` usando `dspTime`) para asegurar sincronizaciÃ³n rÃ­tmica sin fÃ­sicas desfasadas.
-- Cambio de mecÃ¡nica: Se implementÃ³ un sistema de notas descendentes (estilo Friday Night Funkin).
-- Se crearon `NoteSpawner.cs` (orquesta el spawn anticipado) y `NoteObject.cs` (interpola la nota hasta la hitzone basado matemÃ¡ticamente en el progreso de beats).
-- RefactorizaciÃ³n de `NoteSpawner.cs`: Soporte para mÃºltiples carriles (Lanes) estilo FNF. Ahora puede instanciar notas aleatoriamente en 4 direcciones (Left, Down, Up, Right) con `laneID`.
+- Se añadió la pista MIDI de prueba (Billie Jean) a la carpeta de Assets/Audio.
+- Se creó `RhythmManager.cs` que lee `AudioSettings.dspTime` y calcula ventanas de acierto con BPM (117) exactos.
+- Se agregó modo Debug para imprimir por consola cuando entra el beat musical.
+- Se generó y añadió un archivo `.gitignore` optimizado para Unity en la raíz del proyecto para evitar subir archivos temporales (`Library/`, `Temp/`, `.csproj`, etc.) al repositorio.
+- Se implementó `BombController.cs` con lógica de interpolación musical (`Mathf.PingPong` usando `dspTime`) para asegurar sincronización rítmica sin físicas desfasadas.
+- Cambio de mecánica: Se implementó un sistema de notas descendentes (estilo Friday Night Funkin).
+- Se crearon `NoteSpawner.cs` (orquesta el spawn anticipado) y `NoteObject.cs` (interpola la nota hasta la hitzone basado matemáticamente en el progreso de beats).
+- Refactorización de `NoteSpawner.cs`: Soporte para múltiples carriles (Lanes) estilo FNF. Ahora puede instanciar notas aleatoriamente en 4 direcciones (Left, Down, Up, Right) con `laneID`.
+- Modificación de `NoteSpawner.cs`: Se implementó la instanciación de notas dobles. El criterio utilizado es el compás de 4/4 (se instancian 2 flechas en carriles distintos cada vez que el beat es múltiplo de 4, coincidiendo con el acento fuerte del compás musical).
+- Implementación de Input del Jugador (`PlayerInputController.cs`). Se configuró un sistema de validación matemática: cuando se presiona una tecla, el sistema busca la nota correspondiente y cruza la tolerancia con el `RhythmManager`. Si coincide, aumenta el combo y destruye la nota.
+- Refinamiento de métricas rítmicas: Se implementaron ventanas de impacto FNF reales (`Perfect`, `Good`, `Bad`, `Miss`) en `RhythmManager.cs` basadas en milisegundos (`HitResult` enum).
+- Mejoras de feedback visual en `PlayerInputController.cs`: Ahora los HitZones parpadean de colores (Cyan para Perfect, Verde para Good, Naranja para Bad) y se eliminaron los `Debug.Log` excesivos del metrónomo que causaban caída de FPS en el Editor.
+- Optimización extrema de rendimiento y preparación multijugador: 
+  - Se eliminó el uso de `FindObjectsOfType` en favor de una `List<NoteObject>` dinámica dentro de `NoteSpawner`, reduciendo a cero el costo de memoria (Garbage Collection) en cada pulsación.
+  - Se implementó `Random.InitState` determinista basado en el beat actual. Esto permite que los Spawners del Jugador 1 y Jugador 2 generen las mismas notas exactas de forma asíncrona pero matemáticamente idéntica.
 
 ## 2026-10-09 - Arquitectura Core: GameEnums y GameEvents
 
@@ -81,6 +88,15 @@
 - Resumen: Se implemento la logica de acumulacion de calor basada en `GameConfig` (+20% por fallo, -5% por Perfect). El sistema escucha `OnPlayerMiss` y `OnNoteMiss` para incrementar el calor, y `OnHitResolved` para reducirlo. Al alcanzar 1.0f (100%), emite `OnPotatoExploded` una sola vez para que `MatchManager` resuelva la ronda. Se actualizo el documento de responsabilidades marcando el hito como completado.
 - Limitaciones: `PotatoHeatSystem` envia los triggers, pero falta la suscripcion de la UI y de `BombController` para reflejar visualmente el calor.
 
+## 2026-10-10 - Resolucion de conflictos Git en AI_TRACE.md
+- Tarea: Resolver conflictos de merge entre la rama actual y develop.
+- Archivos modificados: AI_TRACE.md
+- Resumen: Se integraron las viñetas del pivot de minijuego (HEAD) con los registros de arquitectura y pruebas (develop), manteniendo ambos.
+
+## 2026-10-10 - Rollback de Arquitectura
+- Tarea: Revertir el proyecto al commit 16c4842 (estado antes de la reorganización y PotatoHeatSystem).
+- Archivos modificados: Todo el proyecto (Rollback), excluyendo AI_TRACE.md para preservar la integridad del registro.
+- Resumen: El usuario decidió descartar los cambios arquitectónicos recientes para abordar la configuración del Jugador 2 desde un estado estable previo.
 ## 2026-10-10 - Mantener contrato de Core (Eventos y Documentacion)
 - Participante: Jose David Rodriguez Pinilla
 - Tarea: Alinear GameEnums, GameConfig y GameEvents con el GDD y documentar emisores/consumidores de cada evento.

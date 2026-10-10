@@ -9,19 +9,32 @@ public class NoteObject : MonoBehaviour
     
     [HideInInspector] public Vector3 spawnPos;
     [HideInInspector] public Vector3 targetPos; // La HitZone (donde debe golpearse)
+    [HideInInspector] public NoteSpawner mySpawner;
+
+    private void Start()
+    {
+        if (mySpawner != null) mySpawner.activeNotes.Add(this);
+    }
+
+    private void OnDestroy()
+    {
+        if (mySpawner != null) mySpawner.activeNotes.Remove(this);
+    }
+
+    public float GetCurrentProgress()
+    {
+        if (RhythmManager.Instance == null) return 0f;
+        float currentBeat = RhythmManager.Instance.songPositionInBeats;
+        float spawnBeat = beatOfThisNote - beatsOnScreen;
+        return (currentBeat - spawnBeat) / beatsOnScreen;
+    }
 
     private void Update()
     {
         if (RhythmManager.Instance == null) return;
 
-        // Obtenemos en qué beat va la canción
-        float currentBeat = RhythmManager.Instance.songPositionInBeats;
-        
-        // Calculamos el progreso. 
-        // 0 = acaba de aparecer. 
-        // 1 = está EXACTAMENTE en la zona de impacto (HitZone).
-        float spawnBeat = beatOfThisNote - beatsOnScreen;
-        float progress = (currentBeat - spawnBeat) / beatsOnScreen;
+        // Calculamos el progreso (0 = origen, 1 = zona de impacto)
+        float progress = GetCurrentProgress();
 
         // Lerp mueve la nota. Al basarse en el tiempo de la canción, ¡jamás se desincroniza!
         transform.position = Vector3.Lerp(spawnPos, targetPos, progress);
