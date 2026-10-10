@@ -86,10 +86,10 @@ Responsable principal de convertir los resultados ritmicos en el ciclo de riesgo
    - Restablecer o reducir calor de acuerdo con las reglas acordadas para los golpes y poderes. (COMPLETADO)
    - Emitir `OnPotatoExploded` una sola vez al alcanzar el umbral; `MatchManager` usa ese evento para resolver la ronda. (COMPLETADO)
    - Coordinar con Felipe el uso de `OnPotatoPositionUpdated`/`OnPotatoLaunched` para que la papa visual represente el resultado del intercambio, sin usar su posicion para decidir si un golpe acerto.
-4. **Crear `ComboSystem.cs`.**
-   - Llevar una racha independiente por jugador segun la calificacion recibida.
-   - Aplicar la regla de cinco aciertos consecutivos y disponibilidad maxima de una carga.
-   - Publicar actualizaciones y reinicios de racha.
+4. **Crear `ComboSystem.cs`. (COMPLETADO)**
+   - Llevar una racha independiente por jugador segun la calificacion recibida. (COMPLETADO)
+   - Aplicar la regla de cinco aciertos consecutivos y disponibilidad maxima de una carga. (COMPLETADO)
+   - Publicar actualizaciones y reinicios de racha. (COMPLETADO)
 5. **Crear `PowerUpManager.cs`.**
    - Empezar por Papa Cohete y Papa Fantasma, como indica la prioridad inicial del GDD.
    - Validar jugador, carga disponible y consumo unico; anunciar activacion y expiracion.
