@@ -80,3 +80,11 @@
   - `Docs/Division de responsabilidades - Backend.md`
 - Resumen: Se implemento la logica de acumulacion de calor basada en `GameConfig` (+20% por fallo, -5% por Perfect). El sistema escucha `OnPlayerMiss` y `OnNoteMiss` para incrementar el calor, y `OnHitResolved` para reducirlo. Al alcanzar 1.0f (100%), emite `OnPotatoExploded` una sola vez para que `MatchManager` resuelva la ronda. Se actualizo el documento de responsabilidades marcando el hito como completado.
 - Limitaciones: `PotatoHeatSystem` envia los triggers, pero falta la suscripcion de la UI y de `BombController` para reflejar visualmente el calor.
+
+## 2026-10-10 - Mantener contrato de Core (Eventos y Documentacion)
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Alinear GameEnums, GameConfig y GameEvents con el GDD y documentar emisores/consumidores de cada evento.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Core/GameEvents.cs`
+- Resumen: Se reviso la alineacion de la configuracion de Core respecto al GDD vigente. Se actualizo la documentacion XML de todos los disparadores en `GameEvents.cs` para hacer explicito quien emite el evento y que modulos lo consumen, previniendo acoplamiento oculto y duplicidad en el calculo de tiempos. Se mantuvo la validacion con 35 pruebas unitarias exitosas.
+- Limitaciones: La actualizacion fue estrictamente a nivel de documentacion y firmas; la integracion en Unity depende de cada consumidor.
