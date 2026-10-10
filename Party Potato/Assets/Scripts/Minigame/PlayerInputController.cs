@@ -156,7 +156,15 @@ public class PlayerInputController : MonoBehaviour
             if (result != HitResult.Miss) 
             {
                 combo++;
-                Debug.Log($"[{playerName}] {result.ToString().ToUpper()}! Combo: {combo}");
+                
+                int points = 0;
+                if (result == HitResult.Perfect) points = scorePerfect;
+                else if (result == HitResult.Good) points = scoreGood;
+                else if (result == HitResult.Bad) points = scoreBad;
+                
+                score += points + (combo * comboBonusMultiplier);
+
+                Debug.Log($"[{playerName}] {result.ToString().ToUpper()}! Score: {score} | Combo: {combo}");
                 
                 // Brillo visual dependiendo de la calidad del golpe
                 Color flashColor = result == HitResult.Perfect ? perfectColor : (result == HitResult.Good ? goodColor : badColor);
@@ -253,5 +261,27 @@ public class PlayerInputController : MonoBehaviour
         GameEvents.TriggerNoteMiss(playerID, laneID);
     }
 
-}
 
+    private void OnEnable()
+    {
+        GameEvents.OnPotatoExploded += HandlePotatoExplosion;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.OnPotatoExploded -= HandlePotatoExplosion;
+    }
+
+    private void HandlePotatoExplosion(PlayerID loserPlayer)
+    {
+        if (playerID == loserPlayer)
+        {
+            score -= 1000; // Penalizacin por explosion
+            if (score < 0) score = 0; // Evitar puntaje negativo si se desea
+            combo = 0;
+            Debug.Log($"[{playerName}] le exploto la papa! Se restaron puntos. Score actual: {score}");
+            SpawnFeedbackWord(HitResult.Miss); // Mostrar feedback de que sufri dao
+        }
+    }
+
+}

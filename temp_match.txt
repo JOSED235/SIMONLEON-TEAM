@@ -1,0 +1,5 @@
+﻿    private void HandlePotatoExploded(PlayerID loser)
+    {
+        if (currentState != MatchState.Playing) return;
+        Debug.Log($"[MatchManager] Explosion en campo de {loser}! Continuamos jugando.");
+    }

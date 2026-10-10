@@ -179,3 +179,32 @@
   - Party Potato/Assets/Scripts/Minigame/NoteObject.cs
   - Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs
 - Resumen: Se actualizo NoteObject.cs para que, en lugar de destruirse silenciosamente al superar el progreso de 1.2f, se comunique con el PlayerInputController del jugador correspondiente invocando el nuevo metodo RegisterPassiveMiss(laneID). Este metodo reinicia el combo, aplica el destello rojo con efecto Pop al HitZone especifico, instancia la palabra flotante de "Miss" y dispara los eventos globales OnPlayerMiss y OnNoteMiss para actualizar el calor de la papa y la animacion de error del personaje.
+## 2026-10-10 - Sistema de Puntuacion Individual
+- Participante: Faiber Piedrahita
+- Tarea: Implementar un sistema de puntuacion para cada jugador que se muestre en pantalla (UI) y se beneficie del combo.
+- Archivos creados:
+  - Party Potato/Assets/Scripts/Minigame/PlayerScoreUI.cs
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs
+- Resumen: Se agrego el atributo score a la logica del PlayerInputController. Cada vez que el jugador acierta una nota (Perfect, Good, Bad), se le suman puntos base mas un bono adicional que depende directamente del combo actual, promoviendo mantener rachas largas. Se creo el script PlayerScoreUI.cs preparado para TextMeshPro, el cual formatea y renderiza este puntaje en la interfaz con un prefijo configurable (ej. "Player1: 001550").
+## 2026-10-10 - Cambio de Penalizacion por Explosion de la Papa
+- Participante: Faiber Piedrahita
+- Tarea: Modificar el castigo cuando la papa caliente explota: ahora no termina la ronda ni declara un ganador, sino que descuenta fuertemente los puntos del jugador penalizado.
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Core/MatchManager.cs
+  - Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs
+- Resumen: Se deshabilito la condicion de victoria/derrota por ronda en el MatchManager al explotar la papa. En su lugar, el PlayerInputController ahora escucha directamente el evento OnPotatoExploded; si el ID del perdedor coincide con su playerID, se le restan 1000 puntos (score), el combo se reduce a 0 y se genera la animacion visual de Miss para avisar al jugador del castigo, permitiendo que la partida continue fluidamente al ritmo de la cancion.
+
+## 2026-10-10 - Interfaz de Combo Multiplicador
+- Participante: Faiber Piedrahita
+- Tarea: Crear un texto emergente en UI que muestre el combo actual del jugador ("Combo x15") con una animacion tipo pop.
+- Archivos creados:
+  - Party Potato/Assets/Scripts/Minigame/PlayerComboUI.cs
+- Resumen: Se desarrollo PlayerComboUI.cs usando TextMeshPro. Este script monitorea en tiempo real el combo del jugador leyendo su `PlayerInputController`. Cuando el combo aumenta, se aplica un efecto visual de "Pop" escalando el texto, y se interpola de regreso a su escala normal suavizado con Lerp. Si el combo vuelve a cero (Miss), el texto se oculta para limpiar la pantalla.
+
+## 2026-10-10 - Colores dinamicos para Combo UI
+- Participante: Faiber Piedrahita
+- Tarea: Cambiar el color del texto del combo en base a la precision del golpe (Perfect = cyan, Good = green, Bad = orange) y mostrar feedback rojo cuando se pierde el combo.
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/PlayerComboUI.cs
+- Resumen: Se integraron los eventos `GameEvents.OnHitResolved` y `GameEvents.OnPlayerMiss` en `PlayerComboUI.cs`. Ahora el texto copia los colores definidos en el `PlayerInputController` segun la calidad del golpe. Cuando un jugador falla, el texto se vuelve rojo, dice "Miss!" y activa un temporizador (`showMissDuration`) antes de volver a ocultarse para que el feedback de error sea visible y evidente para el jugador.

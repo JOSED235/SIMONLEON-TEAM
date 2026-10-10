@@ -128,36 +128,9 @@ public class MatchManager : MonoBehaviour
     private void HandlePotatoExploded(PlayerID loser)
     {
         if (currentState != MatchState.Playing) return;
-
-        currentState = MatchState.RoundOver;
-
-        // El jugador contrario gana la ronda
-        PlayerID roundWinner = (loser == PlayerID.Player1) ? PlayerID.Player2 : PlayerID.Player1;
-
-        if (roundWinner == PlayerID.Player1) player1Score++;
-        else if (roundWinner == PlayerID.Player2) player2Score++;
-
-        Debug.Log(string.Format("[MatchManager] ¡Explosión en campo de {0}! Ronda para {1}. Marcador: P1 [{2}] - P2 [{3}]", loser, roundWinner, player1Score, player2Score));
-
-        GameEvents.TriggerRoundEnded(roundWinner, player1Score, player2Score);
-
-        // Evaluar condición de victoria definitiva
-        int roundsNeeded = (config != null) ? config.roundsToWinMatch : 2;
-        if (player1Score >= roundsNeeded)
-        {
-            EndMatch(PlayerID.Player1);
-        }
-        else if (player2Score >= roundsNeeded)
-        {
-            EndMatch(PlayerID.Player2);
-        }
-        else
-        {
-            // Pasar a la siguiente ronda tras breve pausa
-            currentRound++;
-            roundTransitionCoroutine = StartCoroutine(WaitAndStartNextRoundRoutine());
-        }
+        Debug.Log($"[MatchManager] Explosion en campo de {loser}! Continuamos jugando.");
     }
+
 
     private IEnumerator WaitAndStartNextRoundRoutine()
     {
@@ -191,3 +164,6 @@ public class MatchManager : MonoBehaviour
         StartMatch();
     }
 }
+
+
+
