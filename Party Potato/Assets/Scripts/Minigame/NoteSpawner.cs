@@ -35,29 +35,56 @@ public class NoteSpawner : MonoBehaviour
         if (currentBeat >= (nextBeatToSpawn - beatsOnScreen))
         {
             // TRUCO MULTIJUGADOR: Usamos una semilla matemática basada en el Beat.
-            // Si el Jugador 1 y el Jugador 2 tienen Spawners distintos, AMBOS generarán
-            // la flecha exactamente en el mismo carril al mismo tiempo de forma "aleatoria".
             Random.InitState(nextBeatToSpawn * 12345);
 
-            bool isDoubleNote = (nextBeatToSpawn % 4 == 0);
+            // Generación de patrones dinámicos
+            bool shouldSpawn = true;
+            bool isDoubleNote = false;
 
-            if (isDoubleNote)
+            if (nextBeatToSpawn < 16)
             {
-                int lane1 = Random.Range(0, lanes.Length);
-                int lane2 = Random.Range(0, lanes.Length);
-                
-                while (lane2 == lane1) 
-                {
-                    lane2 = Random.Range(0, lanes.Length);
-                }
-                
-                SpawnNoteForBeat(nextBeatToSpawn, lane1);
-                SpawnNoteForBeat(nextBeatToSpawn, lane2);
+                // Inicio tranquilo: notas solo cada 4 beats
+                if (nextBeatToSpawn % 4 != 0) shouldSpawn = false;
+            }
+            else if (nextBeatToSpawn < 32)
+            {
+                // Un poco más movido: notas en beats pares
+                if (nextBeatToSpawn % 2 != 0) shouldSpawn = false;
             }
             else
             {
-                int randomLaneIndex = Random.Range(0, lanes.Length);
-                SpawnNoteForBeat(nextBeatToSpawn, randomLaneIndex);
+                // Fase principal: Dinámica aleatoria pero sincronizada
+                float randValue = Random.value;
+                if (randValue < 0.15f) 
+                {
+                    shouldSpawn = false; // 15% de probabilidad de silencio total (pausa)
+                }
+                else if (randValue > 0.85f)
+                {
+                    isDoubleNote = true; // 15% de probabilidad de acorde (doble nota)
+                }
+            }
+
+            if (shouldSpawn)
+            {
+                if (isDoubleNote)
+                {
+                    int lane1 = Random.Range(0, lanes.Length);
+                    int lane2 = Random.Range(0, lanes.Length);
+                    
+                    while (lane2 == lane1) 
+                    {
+                        lane2 = Random.Range(0, lanes.Length);
+                    }
+                    
+                    SpawnNoteForBeat(nextBeatToSpawn, lane1);
+                    SpawnNoteForBeat(nextBeatToSpawn, lane2);
+                }
+                else
+                {
+                    int randomLaneIndex = Random.Range(0, lanes.Length);
+                    SpawnNoteForBeat(nextBeatToSpawn, randomLaneIndex);
+                }
             }
             
             nextBeatToSpawn++; 
