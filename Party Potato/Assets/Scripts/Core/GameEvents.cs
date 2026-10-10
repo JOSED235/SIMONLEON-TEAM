@@ -9,12 +9,16 @@ public static class GameEvents
     #region Ritmo y Tiempo
     /// <summary>
     /// Disparado en cada pulso musical (Beat). Parámetro: índice del beat.
-    /// </summary>
+        /// Emisor: RhythmManager.
+    /// Consumidores: NoteSpawner, GameUI (animaciones).
+/// </summary>
     public static event Action<int> OnBeat;
 
     /// <summary>
     /// Disparado en cada compás musical (Measure). Parámetro: índice del compás.
-    /// </summary>
+        /// Emisor: RhythmManager.
+    /// Consumidores: GameUI, escenarios.
+/// </summary>
     public static event Action<int> OnMeasure;
     #endregion
 
@@ -22,25 +26,33 @@ public static class GameEvents
     /// <summary>
     /// Disparado al desplazar la papa entre jugadores.
     /// Parámetros: (origen, destino, targetDspTimeDeImpacto, duracionEnBeats).
-    /// </summary>
+        /// Emisor: HitDetection / RhythmManager.
+    /// Consumidores: BombController, GameUI.
+/// </summary>
     public static event Action<PlayerID, PlayerID, double, float> OnPotatoLaunched;
 
     /// <summary>
     /// Disparado cuando la papa ingresa a la zona de peligro de un jugador.
     /// Parámetro: jugador en cuyo lado se encuentra la papa.
-    /// </summary>
+        /// Emisor: BombController.
+    /// Consumidores: GameUI, Audio (alertas).
+/// </summary>
     public static event Action<PlayerID> OnPotatoReachedHitZone;
 
     /// <summary>
     /// Disparado cuando la posición horizontal normalizada de la papa cambia.
     /// Parámetro: posición normalizada (-1.0f = Jugador 1, 0.0f = Centro, 1.0f = Jugador 2).
-    /// </summary>
+        /// Emisor: BombController.
+    /// Consumidores: GameUI (HUD).
+/// </summary>
     public static event Action<float> OnPotatoPositionUpdated;
 
     /// <summary>
     /// Disparado cuando la papa alcanza el 100% de calor y estalla en el campo de un jugador.
     /// Parámetro: jugador que recibió la explosión (perdedor de la ronda).
-    /// </summary>
+        /// Emisor: PotatoHeatSystem.
+    /// Consumidores: MatchManager, GameUI, Audio.
+/// </summary>
     public static event Action<PlayerID> OnPotatoExploded;
     #endregion
 
@@ -48,25 +60,33 @@ public static class GameEvents
     /// <summary>
     /// Disparado cuando un jugador presiona a tiempo y se evalúa el golpe.
     /// Parámetros: (jugador, resultado [Perfect/Great/Good/Miss], precisión normalizada 0..1).
-    /// </summary>
+        /// Emisor: PlayerInput / Rhythm Evaluator.
+    /// Consumidores: ComboSystem, PotatoHeatSystem, BombController.
+/// </summary>
     public static event Action<PlayerID, HitResult, float> OnHitResolved;
 
     /// <summary>
     /// Disparado cuando se resuelve una nota en un carril específico.
     /// Parámetros: (jugador, laneID [0=Left, 1=Down, 2=Up, 3=Right], resultado, precisión 0..1).
-    /// </summary>
+        /// Emisor: PlayerInput / Rhythm Evaluator.
+    /// Consumidores: GameUI, Audio, NoteObject.
+/// </summary>
     public static event Action<PlayerID, int, HitResult, float> OnNoteHit;
 
     /// <summary>
     /// Disparado cuando el jugador no presiona a tiempo o comete un fallo.
     /// Parámetro: jugador que cometió el fallo.
-    /// </summary>
+        /// Emisor: PlayerInput.
+    /// Consumidores: ComboSystem, PotatoHeatSystem.
+/// </summary>
     public static event Action<PlayerID> OnPlayerMiss;
 
     /// <summary>
     /// Disparado cuando se pierde una nota en un carril específico (auto-miss).
     /// Parámetros: (jugador, laneID).
-    /// </summary>
+        /// Emisor: NoteObject (auto-miss).
+    /// Consumidores: ComboSystem, PotatoHeatSystem, Audio.
+/// </summary>
     public static event Action<PlayerID, int> OnNoteMiss;
     #endregion
 
@@ -74,13 +94,17 @@ public static class GameEvents
     /// <summary>
     /// Disparado cuando cambia la racha de aciertos de un jugador.
     /// Parámetros: (jugador, rachaActual, tienePoderDisponible).
-    /// </summary>
+        /// Emisor: ComboSystem.
+    /// Consumidores: GameUI, PowerUpManager.
+/// </summary>
     public static event Action<PlayerID, int, bool> OnStreakUpdated;
 
     /// <summary>
     /// Disparado cuando un jugador reinicia su racha por cometer un fallo.
     /// Parámetro: jugador cuya racha se reinició a cero.
-    /// </summary>
+        /// Emisor: ComboSystem.
+    /// Consumidores: GameUI.
+/// </summary>
     public static event Action<PlayerID> OnStreakReset;
     #endregion
 
@@ -88,56 +112,74 @@ public static class GameEvents
     /// <summary>
     /// Disparado cuando un jugador acumula 5 aciertos consecutivos y obtiene un poder.
     /// Parámetros: (jugador, tipoDePoderDesbloqueado).
-    /// </summary>
+        /// Emisor: ComboSystem.
+    /// Consumidores: GameUI, PowerUpManager.
+/// </summary>
     public static event Action<PlayerID, PowerType> OnPowerUnlocked;
 
     /// <summary>
     /// Disparado cuando un jugador activa y consume su poder especial.
     /// Parámetros: (jugadorQueLoUsa, tipoDePoderActivado).
-    /// </summary>
+        /// Emisor: PowerUpManager.
+    /// Consumidores: GameUI, RhythmManager, NoteSpawner, PotatoHeatSystem.
+/// </summary>
     public static event Action<PlayerID, PowerType> OnPowerActivated;
 
     /// <summary>
     /// Disparado cuando el efecto de un poder finaliza.
     /// Parámetro: tipo de poder que expiró.
-    /// </summary>
+        /// Emisor: PowerUpManager.
+    /// Consumidores: GameUI, RhythmManager, NoteSpawner.
+/// </summary>
     public static event Action<PowerType> OnPowerExpired;
     #endregion
 
     #region Sistema de Calor
     /// <summary>
     /// Disparado cuando el nivel global de calor de la papa cambia (0.0f a 1.0f).
-    /// </summary>
+        /// Emisor: PotatoHeatSystem.
+    /// Consumidores: GameUI, BombController.
+/// </summary>
     public static event Action<float> OnHeatUpdated;
 
     /// <summary>
     /// Disparado cuando el nivel de calor del campo de un jugador específico cambia.
     /// Parámetros: (jugador, calorNormalizado 0..1).
-    /// </summary>
+        /// Emisor: PotatoHeatSystem.
+    /// Consumidores: GameUI.
+/// </summary>
     public static event Action<PlayerID, float> OnPlayerHeatUpdated;
     #endregion
 
     #region Flujo de Partida y Rondas
     /// <summary>
     /// Disparado al iniciar una nueva ronda. Parámetro: número de ronda actual.
-    /// </summary>
+        /// Emisor: MatchManager.
+    /// Consumidores: PotatoHeatSystem, BombController, GameUI, ComboSystem.
+/// </summary>
     public static event Action<int> OnRoundStarted;
 
     /// <summary>
     /// Disparado cuando una ronda concluye tras la explosión de la papa.
     /// Parámetros: (ganadorDeRonda, rondasGanadasP1, rondasGanadasP2).
-    /// </summary>
+        /// Emisor: MatchManager.
+    /// Consumidores: GameUI, Audio.
+/// </summary>
     public static event Action<PlayerID, int, int> OnRoundEnded;
 
     /// <summary>
     /// Disparado cuando un jugador alcanza la victoria definitiva de la partida.
     /// Parámetro: jugador ganador del duelo.
-    /// </summary>
+        /// Emisor: MatchManager.
+    /// Consumidores: VictoryScreen, GameUI.
+/// </summary>
     public static event Action<PlayerID> OnMatchEnded;
 
     /// <summary>
     /// Disparado para reiniciar la partida completa (revancha).
-    /// </summary>
+        /// Emisor: VictoryScreen / MatchManager.
+    /// Consumidores: MatchManager, GameUI.
+/// </summary>
     public static event Action OnMatchReset;
     #endregion
 

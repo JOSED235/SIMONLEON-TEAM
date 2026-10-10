@@ -176,4 +176,72 @@
 - Pruebas realizadas: 40 pruebas de ritmo, entrada e IA (`run-rhythm-tests.ps1`) + 35 de Core (`run-core-tests.ps1`) = 75 pruebas unitarias aprobadas al 100%.
 - Limitaciones: Cobertura de backend 100% verificada fuera de Unity; la integracion en escena con prefabs y renderizado de sprites queda a cargo del responsable del Editor.
 
+## 2026-10-10 - Implementación de PotatoHeatSystem
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Creacion de `PotatoHeatSystem.cs` para gestionar el nivel de calor y la detonacion de la papa.
+- Archivos creados:
+  - `Party Potato/Assets/Scripts/Gameplay/PotatoHeatSystem.cs`
+- Archivos modificados:
+  - `Docs/Division de responsabilidades - Backend.md`
+- Resumen: Se implemento la logica de acumulacion de calor basada en `GameConfig` (+20% por fallo, -5% por Perfect). El sistema escucha `OnPlayerMiss` y `OnNoteMiss` para incrementar el calor, y `OnHitResolved` para reducirlo. Al alcanzar 1.0f (100%), emite `OnPotatoExploded` una sola vez para que `MatchManager` resuelva la ronda. Se actualizo el documento de responsabilidades marcando el hito como completado.
+- Limitaciones: `PotatoHeatSystem` envia los triggers, pero falta la suscripcion de la UI y de `BombController` para reflejar visualmente el calor.
 
+## 2026-10-10 - Mantener contrato de Core (Eventos y Documentacion)
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Alinear GameEnums, GameConfig y GameEvents con el GDD y documentar emisores/consumidores de cada evento.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Core/GameEvents.cs`
+- Resumen: Se reviso la alineacion de la configuracion de Core respecto al GDD vigente. Se actualizo la documentacion XML de todos los disparadores en `GameEvents.cs` para hacer explicito quien emite el evento y que modulos lo consumen, previniendo acoplamiento oculto y duplicidad en el calculo de tiempos. Se mantuvo la validacion con 35 pruebas unitarias exitosas.
+- Limitaciones: La actualizacion fue estrictamente a nivel de documentacion y firmas; la integracion en Unity depende de cada consumidor.
+
+## 2026-10-10 - Completar MatchManager (event-driven countdown + ciclo completo de rondas)
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Verificar y cerrar la implementacion de `MatchManager.cs`; alinear los tests con el nuevo modelo event-driven.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Core/MatchManager.cs` (confirmado: logica de countdown basada en `HandleBeat` + `OnBeat`, no en corrutinas)
+  - `Tests/Core/MatchManagerTests.cs` (actualizado `TestCountdownTransition` para usar `GameEvents.TriggerBeat()` en lugar de manipular la corrutina `roundTransitionCoroutine`)
+  - `Docs/Division de responsabilidades - Backend.md` (marcado "Completar MatchManager.cs" como COMPLETADO)
+- Resumen: El `MatchManager` ya contenia la implementacion correcta del ciclo de partida (Countdown -> Playing -> RoundOver -> GameOver). El countdown usa `HandleBeat` suscrito a `GameEvents.OnBeat`, respeta `config.countdownBeats`, ignora explosiones fuera del estado Playing, otorga puntos al contrario del perdedor, y reinicia todo el estado en `HandleMatchReset`. El test estaba desalineado con la nueva arquitectura event-driven; se actualizo para simular beats con `TriggerBeat()`. Resultado: 35/35 pruebas unitarias pasando.
+- Limitaciones: La corrutina `WaitAndStartNextRoundRoutine` usa `WaitForSeconds` (Unity time), que no es ejecutable en los tests de consola; el delay entre rondas no se verifica en los tests actuales (es funcionalidad de integracion en Unity).
+
+## 2026-10-10 - Creacion de ComboSystem
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Crear `ComboSystem.cs` con rachas independientes por jugador, desbloqueo unico de poder y reset por ronda.
+- Archivos creados:
+  - `Party Potato/Assets/Scripts/Gameplay/ComboSystem.cs`
+  - `Tests/Gameplay/ComboSystemTests.cs`
+- Archivos modificados:
+  - `Tests/run-core-tests.ps1` (agregados ComboSystem.cs y ComboSystemTests.cs a la suite)
+  - `Docs/Division de responsabilidades - Backend.md` (marcado ComboSystem como COMPLETADO)
+- Resumen: ComboSystem escucha `OnHitResolved`, `OnPlayerMiss`, `OnNoteMiss` y `OnRoundStarted`. Mantiene rachas independientes para P1 y P2. Al alcanzar `config.streakThresholdForPower` aciertos consecutivos emite `OnPowerUnlocked` una sola vez (maxima una carga activa). Cualquier miss reinicia la racha del jugador y emite `OnStreakReset` solo si la racha no era ya 0. Al iniciar una nueva ronda, ambas rachas y cargas se reinician. Expone `ConsumePower()` para que PowerUpManager consuma la carga al activar un poder. Suite de 18 tests; total acumulado: 53/53 tests pasando.
+- Limitaciones: El tipo de poder emitido en `OnPowerUnlocked` es `PowerType.None`; PowerUpManager debera determinar que poder otorgar segun la logica del GDD.
+
+## 2026-10-10 - Creacion de PowerUpManager
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Crear `PowerUpManager.cs` con validacion de carga, activacion, temporizador y expiracion de poderes.
+- Archivos creados:
+  - `Party Potato/Assets/Scripts/Gameplay/PowerUpManager.cs`
+  - `Tests/Gameplay/PowerUpManagerTests.cs`
+- Archivos modificados:
+  - `Tests/run-core-tests.ps1` (agregados PowerUpManager.cs y PowerUpManagerTests.cs)
+  - `Docs/Division de responsabilidades - Backend.md` (marcado PowerUpManager como COMPLETADO)
+- Resumen: PowerUpManager valida carga disponible via ComboSystem.PowerReady1/2, consume la carga con ConsumePower(), emite OnPowerActivated al activar y OnPowerExpired al expirar (via corrutina WaitForSeconds). Un jugador solo puede tener un poder activo a la vez. HandleRoundStarted cancela poderes activos emitiendo OnPowerExpired. Los efectos concretos sobre notas (velocidad, invisibilidad, ventana electrica) son delegados a NoteSpawner/NoteObject via los eventos del bus. Soporta los 4 tipos del GDD con duraciones desde GameConfig. 12 tests nuevos; total acumulado: 65/65 PASS.
+- Limitaciones: La duracion de Papa Cohete usa un proxy en segundos (rocketDurationMeasures * 2f) porque el tempo real depende de RhythmManager que aun no esta integrado. El tipo de poder asignado al desbloquear es RocketPotato por defecto; la seleccion dinamica de poder debera coordinarse con Felipe segun el GDD.
+
+## 2026-10-10 - Merge de devJose en backend
+- Participante: Felipe Calderon
+- Tarea: Combinar rama `origin/devJose` en la rama `backend`, resolviendo conflictos de documentacion en `AI_TRACE.md`.
+- Archivos afectados:
+  - `AI_TRACE.md` (conflicto resuelto — entradas de ambas ramas conservadas en orden cronologico)
+  - `Docs/Division de responsabilidades - Backend.md` (traido desde devJose)
+  - `Party Potato/Assets/Scripts/Core/GameEvents.cs` (traido desde devJose)
+  - `Party Potato/Assets/Scripts/Core/MatchManager.cs` (traido desde devJose)
+  - `Party Potato/Assets/Scripts/Gameplay/ComboSystem.cs` (nuevo, traido desde devJose)
+  - `Party Potato/Assets/Scripts/Gameplay/PotatoHeatSystem.cs` (nuevo, traido desde devJose)
+  - `Party Potato/Assets/Scripts/Gameplay/PowerUpManager.cs` (nuevo, traido desde devJose)
+  - `Tests/Core/MatchManagerTests.cs` (traido desde devJose)
+  - `Tests/Gameplay/ComboSystemTests.cs` (nuevo, traido desde devJose)
+  - `Tests/Gameplay/PowerUpManagerTests.cs` (nuevo, traido desde devJose)
+  - `Tests/run-core-tests.ps1` (traido desde devJose)
+- Resumen: Merge exitoso. El backend de Jose David (PotatoHeatSystem, ComboSystem, PowerUpManager, MatchManager event-driven) queda integrado junto al backend de Felipe (RhythmManager, NoteSpawner, NoteObject, PlayerInput, AIController). El unico conflicto fue en AI_TRACE.md; se resolvio conservando todas las entradas de ambas ramas segun la regla de registro incremental.
+- Limitaciones: Integracion en escena Unity pendiente del responsable del Editor.

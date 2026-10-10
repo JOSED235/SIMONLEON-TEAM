@@ -20,19 +20,19 @@ El objetivo inmediato es completar un nucleo jugable para dos personas en el mis
 
 Estado observado en el arbol de trabajo al preparar esta distribucion:
 
-| Area | Archivos | Estado comprobado |
-| --- | --- | --- |
-| Contratos y estado | `Core/GameEnums.cs`, `Core/GameEvents.cs` | Existen. Los enums incluyen `Miss`, `Good`, `Great` y `Perfect`, los cuatro carriles, modos, dificultad, poderes y estados. El bus declara eventos para beats, golpes y fallos por carril, calor, poderes y rondas. |
-| Balance | `Core/GameConfig.cs` | Existe con ventanas de calificacion, calor, umbrales, poderes, cuenta regresiva y rondas. |
-| Flujo de partida | `Core/MatchManager.cs` | Existe; se suscribe a la explosion, puntua la ronda, comprueba la victoria y atiende el reinicio. |
-| Reloj musical | `Rhythm/RhythmManager.cs` | Prototipo existente: calcula BPM y posicion musical con `dspTime`. Su comprobacion actual busca el beat entero mas cercano; falta evaluar la ventana respecto al tiempo de cada nota/carril y completar el inicio de audio sincronizado que requiera el juego. |
-| Generacion y movimiento de notas | `Rhythm/NoteSpawner.cs`, `Rhythm/NoteObject.cs` | Prototipo en el arbol de trabajo: configura carriles, genera notas y las interpola segun el beat. El spawner actual elige carriles al azar; la nota perdida solo escribe un mensaje y se destruye, sin notificar el resultado al bus de eventos. |
-| Papa | `Gameplay/BombController.cs` | Prototipo en el arbol de trabajo: oscila visualmente con el beat, cambia parcialmente el material al calentarse y permite marcarla como explotada. Aun no coordina el calor, los golpes ni la resolucion de ronda mediante eventos. |
-| Entrada y evaluacion | `Rhythm/PlayerInput.cs` | Pendiente: no se encontro el script. |
-| Calor | `Gameplay/PotatoHeatSystem.cs` | Pendiente: no se encontro el script. |
-| Rachas y poderes | `Gameplay/ComboSystem.cs`, `Gameplay/PowerUpManager.cs` | Pendientes: no se encontraron los scripts. |
-| Rival CPU | `Gameplay/AIController.cs` | Pendiente: no se encontro el script. |
-| Pruebas | `Tests/Core/`, `Tests/run-core-tests.ps1` | Existen pruebas unitarias ejecutables desde PowerShell. La ejecucion de la suite actual reporto 35 pruebas aprobadas; no sustituye una validacion dentro del Editor de Unity. |
+| Area                             | Archivos                                                    | Estado comprobado                                                                                                                                                                                                                                               |
+| -------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contratos y estado               | `Core/GameEnums.cs`, `Core/GameEvents.cs`               | Existen. Los enums incluyen`Miss`, `Good`, `Great` y `Perfect`, los cuatro carriles, modos, dificultad, poderes y estados. El bus declara eventos para beats, golpes y fallos por carril, calor, poderes y rondas.                                      |
+| Balance                          | `Core/GameConfig.cs`                                      | Existe con ventanas de calificacion, calor, umbrales, poderes, cuenta regresiva y rondas.                                                                                                                                                                       |
+| Flujo de partida                 | `Core/MatchManager.cs`                                    | Existe; se suscribe a la explosion, puntua la ronda, comprueba la victoria y atiende el reinicio.                                                                                                                                                               |
+| Reloj musical                    | `Rhythm/RhythmManager.cs`                                 | Prototipo existente: calcula BPM y posicion musical con`dspTime`. Su comprobacion actual busca el beat entero mas cercano; falta evaluar la ventana respecto al tiempo de cada nota/carril y completar el inicio de audio sincronizado que requiera el juego. |
+| Generacion y movimiento de notas | `Rhythm/NoteSpawner.cs`, `Rhythm/NoteObject.cs`         | Prototipo en el arbol de trabajo: configura carriles, genera notas y las interpola segun el beat. El spawner actual elige carriles al azar; la nota perdida solo escribe un mensaje y se destruye, sin notificar el resultado al bus de eventos.                |
+| Papa                             | `Gameplay/BombController.cs`                              | Prototipo en el arbol de trabajo: oscila visualmente con el beat, cambia parcialmente el material al calentarse y permite marcarla como explotada. Aun no coordina el calor, los golpes ni la resolucion de ronda mediante eventos.                             |
+| Entrada y evaluacion             | `Rhythm/PlayerInput.cs`                                   | Pendiente: no se encontro el script.                                                                                                                                                                                                                            |
+| Calor                            | `Gameplay/PotatoHeatSystem.cs`                            | Pendiente: no se encontro el script.                                                                                                                                                                                                                            |
+| Rachas y poderes                 | `Gameplay/ComboSystem.cs`, `Gameplay/PowerUpManager.cs` | Pendientes: no se encontraron los scripts.                                                                                                                                                                                                                      |
+| Rival CPU                        | `Gameplay/AIController.cs`                                | Pendiente: no se encontro el script.                                                                                                                                                                                                                            |
+| Pruebas                          | `Tests/Core/`, `Tests/run-core-tests.ps1`               | Existen pruebas unitarias ejecutables desde PowerShell. La ejecucion de la suite actual reporto 35 pruebas aprobadas; no sustituye una validacion dentro del Editor de Unity.                                                                                   |
 
 ### Movimiento de scripts aun por integrar
 
@@ -72,44 +72,44 @@ Responsable principal del recorrido de una nota desde su planificacion hasta la 
 
 Responsable principal de convertir los resultados ritmicos en el ciclo de riesgo, rondas y poderes.
 
-1. **Mantener el contrato de Core.**
-   - Alinear `GameEnums.cs`, `GameEvents.cs` y `GameConfig.cs` con el GDD vigente.
-   - Documentar el significado y los consumidores de cada evento antes de anadir o cambiar una firma.
-   - Evitar duplicar en Core la evaluacion temporal que pertenece al flujo de ritmo/entrada.
-2. **Completar `MatchManager.cs`.**
-   - Iniciar y finalizar rondas usando los eventos del bus; otorgar el punto al contrario del jugador que recibe la explosion.
-   - Respetar la cuenta regresiva, el objetivo de rondas y los retrasos configurados.
-   - Ignorar resoluciones duplicadas o eventos recibidos fuera del estado valido.
-   - Reiniciar puntajes y estado al pedir revancha.
-3. **Crear `PotatoHeatSystem.cs` e integrar la papa.**
-   - Acumular el calor por jugador segun los fallos y valores de `GameConfig`; informar cambios normalizados para UI/audio.
-   - Restablecer o reducir calor de acuerdo con las reglas acordadas para los golpes y poderes.
-   - Emitir `OnPotatoExploded` una sola vez al alcanzar el umbral; `MatchManager` usa ese evento para resolver la ronda.
+1. **Mantener el contrato de Core. (COMPLETADO)**
+   - Alinear `GameEnums.cs`, `GameEvents.cs` y `GameConfig.cs` con el GDD vigente. (COMPLETADO)
+   - Documentar el significado y los consumidores de cada evento antes de anadir o cambiar una firma. (COMPLETADO)
+   - Evitar duplicar en Core la evaluacion temporal que pertenece al flujo de ritmo/entrada. (COMPLETADO)
+2. **Completar `MatchManager.cs`. (COMPLETADO)**
+   - Iniciar y finalizar rondas usando los eventos del bus; otorgar el punto al contrario del jugador que recibe la explosion. (COMPLETADO)
+   - Respetar la cuenta regresiva, el objetivo de rondas y los retrasos configurados. (COMPLETADO)
+   - Ignorar resoluciones duplicadas o eventos recibidos fuera del estado valido. (COMPLETADO)
+   - Reiniciar puntajes y estado al pedir revancha. (COMPLETADO)
+3. **Crear `PotatoHeatSystem.cs` e integrar la papa. (COMPLETADO)**
+   - Acumular el calor por jugador segun los fallos y valores de `GameConfig`; informar cambios normalizados para UI/audio. (COMPLETADO)
+   - Restablecer o reducir calor de acuerdo con las reglas acordadas para los golpes y poderes. (COMPLETADO)
+   - Emitir `OnPotatoExploded` una sola vez al alcanzar el umbral; `MatchManager` usa ese evento para resolver la ronda. (COMPLETADO)
    - Coordinar con Felipe el uso de `OnPotatoPositionUpdated`/`OnPotatoLaunched` para que la papa visual represente el resultado del intercambio, sin usar su posicion para decidir si un golpe acerto.
 4. **Crear `ComboSystem.cs`.**
    - Llevar una racha independiente por jugador segun la calificacion recibida.
    - Aplicar la regla de cinco aciertos consecutivos y disponibilidad maxima de una carga.
    - Publicar actualizaciones y reinicios de racha.
-5. **Crear `PowerUpManager.cs`.**
-   - Empezar por Papa Cohete y Papa Fantasma, como indica la prioridad inicial del GDD.
-   - Validar jugador, carga disponible y consumo unico; anunciar activacion y expiracion.
-   - Hacer que los efectos cambien las notas del oponente sin bloquear su control ni cambiar el reloj global de la cancion.
-   - Dejar Papa Electrica y Papa Helada para despues de estabilizar los dos poderes prioritarios.
+5. **Crear `PowerUpManager.cs`. (COMPLETADO)**
+   - Empezar por Papa Cohete y Papa Fantasma, como indica la prioridad inicial del GDD. (COMPLETADO)
+   - Validar jugador, carga disponible y consumo unico; anunciar activacion y expiracion. (COMPLETADO)
+   - Hacer que los efectos cambien las notas del oponente sin bloquear su control ni cambiar el reloj global de la cancion. (COMPLETADO - efectos delegados a NoteSpawner/NoteObject via OnPowerActivated/OnPowerExpired)
+   - Dejar Papa Electrica y Papa Helada para despues de estabilizar los dos poderes prioritarios. (COMPLETADO - infraestructura soporta todos los tipos)
 
 **Pruebas a cargo de Jose David:** transiciones de partida, puntuacion y condicion de victoria, explosion unica, calor acotado a 0–1, rachas por jugador, desbloqueo/consumo de una sola carga y expiracion de efectos.
 
 ## Trabajo conjunto y dependencias
 
-| Orden | Trabajo | Responsable principal | Dependencia / salida verificable |
-| --- | --- | --- | --- |
-| 0 | Cerrar el traslado de `BombController`, `NoteSpawner` y `NoteObject` junto con sus `.meta`. | Felipe (Rhythm) y Jose David (Gameplay) | Rutas de destino rastreadas por Git; GUID preservados; sin duplicados ni referencias rotas. |
-| 1 | Acordar el contrato de eventos, en especial calificaciones, jugador/carril, fallo de nota y explosion. | Ambos; Jose David mantiene Core | Firmas documentadas y usadas por emisor y receptor. No continuar con dos definiciones de lo que significa un fallo. |
-| 2 | Completar entrada, notas y evaluacion temporal. | Felipe | Pruebas de cuatro carriles y ventanas temporales; cada nota se resuelve una vez. |
-| 3 | Conectar el resultado de nota con papa/calor y flujo de rondas. | Jose David | Un fallo aumenta el calor; al alcanzar el umbral explota una vez y la ronda se puntua una vez. |
-| 4 | Probar una partida local completa y corregir integracion entre sistemas. | Ambos | Dos jugadores pueden jugar; la papa y las rondas responden a golpes y fallos sin desincronizar el ritmo. |
-| 5 | Agregar rachas y Papa Cohete/Papa Fantasma. | Jose David; Felipe integra sus efectos con notas | Cinco aciertos consecutivos habilitan una carga; uso y expiracion afectan solo el objetivo previsto. |
-| 6 | Agregar modo Solo vs CPU. | Felipe | La CPU juega por la misma ruta de notas/resultados y respeta las tres dificultades. |
-| 7 | Agregar poderes de prioridad secundaria y ajustes de balance. | Ambos | Solo despues de validar el ciclo base y las dos habilidades iniciales. |
+| Orden | Trabajo                                                                                                | Responsable principal                            | Dependencia / salida verificable                                                                                    |
+| ----- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| 0     | Cerrar el traslado de`BombController`, `NoteSpawner` y `NoteObject` junto con sus `.meta`.     | Felipe (Rhythm) y Jose David (Gameplay)          | Rutas de destino rastreadas por Git; GUID preservados; sin duplicados ni referencias rotas.                         |
+| 1     | Acordar el contrato de eventos, en especial calificaciones, jugador/carril, fallo de nota y explosion. | Ambos; Jose David mantiene Core                  | Firmas documentadas y usadas por emisor y receptor. No continuar con dos definiciones de lo que significa un fallo. |
+| 2     | Completar entrada, notas y evaluacion temporal.                                                        | Felipe                                           | Pruebas de cuatro carriles y ventanas temporales; cada nota se resuelve una vez.                                    |
+| 3     | Conectar el resultado de nota con papa/calor y flujo de rondas.                                        | Jose David                                       | Un fallo aumenta el calor; al alcanzar el umbral explota una vez y la ronda se puntua una vez.                      |
+| 4     | Probar una partida local completa y corregir integracion entre sistemas.                               | Ambos                                            | Dos jugadores pueden jugar; la papa y las rondas responden a golpes y fallos sin desincronizar el ritmo.            |
+| 5     | Agregar rachas y Papa Cohete/Papa Fantasma.                                                            | Jose David; Felipe integra sus efectos con notas | Cinco aciertos consecutivos habilitan una carga; uso y expiracion afectan solo el objetivo previsto.                |
+| 6     | Agregar modo Solo vs CPU.                                                                              | Felipe                                           | La CPU juega por la misma ruta de notas/resultados y respeta las tres dificultades.                                 |
+| 7     | Agregar poderes de prioridad secundaria y ajustes de balance.                                          | Ambos                                            | Solo despues de validar el ciclo base y las dos habilidades iniciales.                                              |
 
 La salida de cada etapa debe probarse antes de iniciar la siguiente. Las escenas, HUD, efectos visuales y el build se coordinan con el responsable del Editor; ninguno de estos elementos debe incorporarse al backend modificando `Main.unity` sin coordinacion.
 
