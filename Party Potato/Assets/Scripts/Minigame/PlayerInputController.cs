@@ -10,7 +10,7 @@ public class PlayerInputController : MonoBehaviour
     public string playerName = "Jugador 1";
     public PlayerID playerID = PlayerID.Player1;
     
-    [Header("Mapeo de Teclas (Solo Sistema Viejo)")]
+    [Header("Mapeo de Teclas")]
     public KeyCode keyLeft = KeyCode.LeftArrow;
     public KeyCode keyDown = KeyCode.DownArrow;
     public KeyCode keyUp = KeyCode.UpArrow;
@@ -33,6 +33,12 @@ public class PlayerInputController : MonoBehaviour
 
     // Controladores de tiempo para apagar el brillo
     private float[] colorResetTimers = new float[4];
+
+    private void Start()
+    {
+        // Forzamos a usar el componente del MISMO GameObject para evitar que el Jugador 2 lea al Spawner del Jugador 1
+        mySpawner = GetComponent<NoteSpawner>();
+    }
 
     private void Update()
     {

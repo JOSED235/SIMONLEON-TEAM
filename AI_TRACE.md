@@ -134,3 +134,20 @@
 - Tarea: Crear representacion visual del medidor de presion de la papa mediante un Slider de Unity.
 - Archivos creados: Party Potato/Assets/Scripts/Minigame/PressureMeterUI.cs
 - Resumen: Se implemento un script que lee el currentPressure del HotPotatoPressureMeter y suaviza el movimiento de un Slider en la UI (Lerp), ademas de interpolar el color de amarillo a rojo segun el riesgo de explosion.
+## 2026-10-10 - Fix Player 1 Inputs overriding Player 2
+- Participante: Antigravity
+- Tarea: Solucionar el bug donde ambos personajes reaccionaban a las entradas del Jugador 1, a pesar de estar configurados con distintos inputs en el Inspector.
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs
+  - Party Potato/Assets/Scripts/Minigame/PlayerAnimator.cs
+- Resumen: El problema ocurria porque, al duplicar el GameObject del Jugador 1 para crear el Jugador 2, las referencias en el Inspector (mySpawner y playerInput) seguian apuntando a los componentes del Jugador 1. Se forzo el uso de GetComponent<T>() en el metodo Start() de ambos scripts para obligar a cada jugador a referenciar estrictamente a sus propios componentes en su propio GameObject, ignorando cualquier referencia residual del Inspector.
+
+## 2026-10-10 - Fix Input Overrides y Referencias Cruzadas del Jugador 2
+- Participante: Antigravity
+- Tarea: Solucionar los problemas de inputs compartidos y falta de animaciones al duplicar al Jugador 1 para crear al Jugador 2.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs`
+  - `Party Potato/Assets/Scripts/Minigame/PlayerAnimator.cs`
+- Resumen: 
+  1. Se cambió el uso de referencias estáticas del Inspector por `GetComponentInParent<PlayerInputController>()` y `GetComponent<NoteSpawner>()`. Esto arregló el problema donde el Jugador 2 perdía sus animaciones porque el script intentaba buscar el cerebro de inputs en el hijo (`P2_Pos`) en vez de en la raíz (`Player2`), y donde se compartía el Spawner del Jugador 1.
+  2. Se eliminó una regla "hardcodeada" que sobreescribía las flechas del Jugador 2 por WASD. Al eliminar esto, el código ahora respeta estrictamente la configuración manual del Inspector (Jugador 1: WASD, Jugador 2: Flechas direccionales).
