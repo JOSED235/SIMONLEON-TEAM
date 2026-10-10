@@ -15,13 +15,10 @@ public static class MatchManagerTests
         Run("Duplicate MatchManager instance is destroyed", TestDuplicateInstance);
         Run("StartMatch resets the match and begins round one", TestStartMatch);
         Run("Countdown transitions into Playing", TestCountdownTransition);
-        Run("Successful hits alternate the active player", TestSuccessfulHitsAlternatePlayers);
-        Run("Miss results do not alternate the active player", TestMissResultDoesNotAlternate);
-        Run("Hits outside Playing do not change the turn", TestHitsOutsidePlayingAreIgnored);
-        Run("A miss scores the opponent and assigns the next serve", TestMissAwardsPoint);
-        Run("A miss at the threshold ends the match for Player 1", TestPlayerOneWinsMatch);
-        Run("A miss at the threshold ends the match for Player 2", TestPlayerTwoWinsMatch);
-        Run("Repeated miss events resolve a round only once", TestRepeatedMissIsIgnored);
+        Run("Potato explosion awards point to opponent", TestPotatoExplosionAwardsPoint);
+        Run("Potato explosion at threshold ends the match for Player 1", TestPlayerOneWinsMatch);
+        Run("Potato explosion at threshold ends the match for Player 2", TestPlayerTwoWinsMatch);
+        Run("Repeated explosion events resolve a round only once", TestRepeatedExplosionIsIgnored);
         Run("OnDisable unsubscribes MatchManager event handlers", TestOnDisableUnsubscribes);
         Run("MatchReset restarts the match", TestMatchReset);
         return passed;
@@ -47,16 +44,21 @@ public static class MatchManagerTests
     private static void TestGameConfigDefaults()
     {
         GameConfig config = ScriptableObject.CreateInstance<GameConfig>();
-        AssertEqual(0.07f, config.perfectTolerance, "Perfect tolerance default is incorrect.");
+        AssertEqual(0.05f, config.perfectTolerance, "Perfect tolerance default is incorrect.");
+        AssertEqual(0.10f, config.greatTolerance, "Great tolerance default is incorrect.");
         AssertEqual(0.15f, config.goodTolerance, "Good tolerance default is incorrect.");
-        AssertEqual(0.05f, config.electricPerfectTolerance, "Electric tolerance default is incorrect.");
-        AssertEqual(2f, config.defaultTravelBeats, "Default travel beats are incorrect.");
-        AssertEqual(1.25f, config.rocketSpeedMultiplier, "Rocket speed multiplier is incorrect.");
-        AssertEqual(4, config.countdownBeats, "Countdown beats default is incorrect.");
+        AssertEqual(0.03f, config.electricPerfectTolerance, "Electric tolerance default is incorrect.");
+        AssertEqual(0.20f, config.heatGainOnMiss, "Heat gain on miss default is incorrect.");
+        AssertEqual(0.05f, config.heatCooldownOnPerfect, "Heat cooldown on perfect default is incorrect.");
+        AssertEqual(0.60f, config.heatThresholdCritical, "Heat threshold critical default is incorrect.");
+        AssertEqual(1.0f, config.heatThresholdExplosion, "Heat threshold explosion default is incorrect.");
+        AssertEqual(0.40f, config.freezePotatoHeatReduction, "Freeze potato heat reduction default is incorrect.");
         AssertEqual(5, config.streakThresholdForPower, "Power streak threshold is incorrect.");
-        AssertEqual(2, config.goldenBonusHits, "Golden bonus hits default is incorrect.");
-        AssertEqual(0.05f, config.heatGainPerHit, "Heat gain per hit default is incorrect.");
-        AssertEqual(0.15f, config.heatGainOnMiss, "Heat gain on miss default is incorrect.");
+        AssertEqual(1.50f, config.rocketSpeedMultiplier, "Rocket speed multiplier is incorrect.");
+        AssertEqual(3.0f, config.ghostEffectDuration, "Ghost effect duration is incorrect.");
+        AssertEqual(4, config.rocketDurationMeasures, "Rocket duration measures is incorrect.");
+        AssertEqual(2.0f, config.defaultTravelBeats, "Default travel beats are incorrect.");
+        AssertEqual(4, config.countdownBeats, "Countdown beats default is incorrect.");
         AssertEqual(2, config.roundsToWinMatch, "Rounds-to-win default is incorrect.");
         AssertEqual(2.5f, config.delayBeforeNextRound, "Next-round delay default is incorrect.");
         AssertEqual(3f, config.delayBeforeGameOver, "Game-over delay default is incorrect.");
@@ -89,8 +91,6 @@ public static class MatchManagerTests
         SetField(manager, "player1Score", 1);
         SetField(manager, "player2Score", 2);
         SetField(manager, "matchWinner", PlayerID.Player2);
-        SetField(manager, "servingPlayer", PlayerID.Player2);
-        SetField(manager, "activePlayer", PlayerID.Player2);
 
         int startedRound = -1;
         GameEvents.OnRoundStarted += round => startedRound = round;
@@ -100,8 +100,6 @@ public static class MatchManagerTests
         AssertEqual(0, manager.Player1Score, "Player 1 score was not reset.");
         AssertEqual(0, manager.Player2Score, "Player 2 score was not reset.");
         AssertEqual(PlayerID.None, manager.MatchWinner, "Previous winner was not cleared.");
-        AssertEqual(PlayerID.Player1, manager.ServingPlayer, "New match did not assign the first serve to Player 1.");
-        AssertEqual(PlayerID.Player1, manager.ActivePlayer, "First active player should be Player 1.");
         AssertEqual(MatchState.Countdown, manager.CurrentState, "New match did not enter countdown.");
         AssertEqual(1, startedRound, "RoundStarted did not report round one.");
     }
@@ -119,42 +117,12 @@ public static class MatchManagerTests
         AssertEqual(MatchState.Playing, manager.CurrentState, "Countdown did not transition to Playing.");
     }
 
-    private static void TestSuccessfulHitsAlternatePlayers()
+    private static void TestPotatoExplosionAwardsPoint()
     {
         MatchManager manager = CreatePlayingManager();
-        GameEvents.TriggerHitResolved(PlayerID.Player1, HitResult.Good, 0.5f);
-        AssertEqual(PlayerID.Player2, manager.ActivePlayer, "Player 1 hit did not pass the turn to Player 2.");
-
-        GameEvents.TriggerHitResolved(PlayerID.Player2, HitResult.Perfect, 1f);
-        AssertEqual(PlayerID.Player1, manager.ActivePlayer, "Player 2 hit did not pass the turn to Player 1.");
-    }
-
-    private static void TestMissResultDoesNotAlternate()
-    {
-        MatchManager manager = CreatePlayingManager();
-        GameEvents.TriggerHitResolved(PlayerID.Player1, HitResult.Miss, 0f);
-        AssertEqual(PlayerID.Player1, manager.ActivePlayer, "A Miss result unexpectedly changed the active player.");
-    }
-
-    private static void TestHitsOutsidePlayingAreIgnored()
-    {
-        MatchManager manager = CreateManager(CreateConfig(3));
-        GameEvents.TriggerHitResolved(PlayerID.Player1, HitResult.Perfect, 1f);
-        AssertEqual(PlayerID.Player1, manager.ActivePlayer, "Hit changed the turn while the match was Idle.");
-
-        SetField(manager, "currentState", MatchState.RoundOver);
-        GameEvents.TriggerHitResolved(PlayerID.Player1, HitResult.Good, 0.5f);
-        AssertEqual(PlayerID.Player1, manager.ActivePlayer, "Hit changed the turn after the round ended.");
-    }
-
-    private static void TestMissAwardsPoint()
-    {
-        MatchManager manager = CreatePlayingManager();
-        PlayerID explodedPlayer = PlayerID.None;
         PlayerID roundWinner = PlayerID.None;
         int finalPlayer1Score = -1;
         int finalPlayer2Score = -1;
-        GameEvents.OnPotatoExploded += player => explodedPlayer = player;
         GameEvents.OnRoundEnded += (winner, player1Score, player2Score) =>
         {
             roundWinner = winner;
@@ -162,14 +130,12 @@ public static class MatchManagerTests
             finalPlayer2Score = player2Score;
         };
 
-        GameEvents.TriggerPlayerMiss(PlayerID.Player1);
+        GameEvents.TriggerPotatoExploded(PlayerID.Player1);
 
-        AssertEqual(MatchState.RoundOver, manager.CurrentState, "Miss did not end the round.");
+        AssertEqual(MatchState.RoundOver, manager.CurrentState, "Potato explosion did not end the round.");
         AssertEqual(0, manager.Player1Score, "Losing player received the point.");
         AssertEqual(1, manager.Player2Score, "Opponent did not receive the point.");
-        AssertEqual(PlayerID.Player1, manager.ServingPlayer, "Player who missed did not get the next serve.");
         AssertEqual(2, manager.CurrentRound, "Next round number was not advanced.");
-        AssertEqual(PlayerID.Player1, explodedPlayer, "Explosion event did not identify the player who missed.");
         AssertEqual(PlayerID.Player2, roundWinner, "RoundEnded did not report the opponent as winner.");
         AssertEqual(0, finalPlayer1Score, "RoundEnded reported the wrong Player 1 score.");
         AssertEqual(1, finalPlayer2Score, "RoundEnded reported the wrong Player 2 score.");
@@ -180,7 +146,7 @@ public static class MatchManagerTests
         MatchManager manager = CreatePlayingManager(CreateConfig(1));
         PlayerID matchWinner = PlayerID.None;
         GameEvents.OnMatchEnded += player => matchWinner = player;
-        GameEvents.TriggerPlayerMiss(PlayerID.Player2);
+        GameEvents.TriggerPotatoExploded(PlayerID.Player2);
 
         AssertEqual(1, manager.Player1Score, "Player 1 did not receive the winning point.");
         AssertEqual(MatchState.GameOver, manager.CurrentState, "Winning point did not end the match.");
@@ -194,7 +160,7 @@ public static class MatchManagerTests
         MatchManager manager = CreatePlayingManager(CreateConfig(1));
         PlayerID matchWinner = PlayerID.None;
         GameEvents.OnMatchEnded += player => matchWinner = player;
-        GameEvents.TriggerPlayerMiss(PlayerID.Player1);
+        GameEvents.TriggerPotatoExploded(PlayerID.Player1);
 
         AssertEqual(1, manager.Player2Score, "Player 2 did not receive the winning point.");
         AssertEqual(MatchState.GameOver, manager.CurrentState, "Winning point did not end the match.");
@@ -202,28 +168,26 @@ public static class MatchManagerTests
         AssertEqual(PlayerID.Player2, matchWinner, "MatchEnded reported the wrong winner.");
     }
 
-    private static void TestRepeatedMissIsIgnored()
+    private static void TestRepeatedExplosionIsIgnored()
     {
         MatchManager manager = CreatePlayingManager();
-        int explosions = 0;
-        GameEvents.OnPotatoExploded += player => explosions++;
+        int roundsEnded = 0;
+        GameEvents.OnRoundEnded += (winner, p1, p2) => roundsEnded++;
 
-        GameEvents.TriggerPlayerMiss(PlayerID.Player1);
-        GameEvents.TriggerPlayerMiss(PlayerID.Player1);
+        GameEvents.TriggerPotatoExploded(PlayerID.Player1);
+        GameEvents.TriggerPotatoExploded(PlayerID.Player1);
 
-        AssertEqual(1, manager.Player2Score, "Repeated miss awarded more than one point.");
-        AssertEqual(1, explosions, "Repeated miss triggered more than one explosion.");
+        AssertEqual(1, manager.Player2Score, "Repeated explosion awarded more than one point.");
+        AssertEqual(1, roundsEnded, "Repeated explosion triggered more than one round end event.");
     }
 
     private static void TestOnDisableUnsubscribes()
     {
         MatchManager manager = CreatePlayingManager();
         Invoke(manager, "OnDisable");
-        GameEvents.TriggerHitResolved(PlayerID.Player1, HitResult.Perfect, 1f);
-        GameEvents.TriggerPlayerMiss(PlayerID.Player1);
+        GameEvents.TriggerPotatoExploded(PlayerID.Player1);
 
-        AssertEqual(PlayerID.Player1, manager.ActivePlayer, "Disabled manager still handled hit events.");
-        AssertEqual(0, manager.Player2Score, "Disabled manager still handled miss events.");
+        AssertEqual(0, manager.Player2Score, "Disabled manager still handled explosion events.");
     }
 
     private static void TestMatchReset()
@@ -240,7 +204,6 @@ public static class MatchManagerTests
         AssertEqual(0, manager.Player1Score, "Match reset did not clear Player 1 score.");
         AssertEqual(0, manager.Player2Score, "Match reset did not clear Player 2 score.");
         AssertEqual(PlayerID.None, manager.MatchWinner, "Match reset did not clear the winner.");
-        AssertEqual(PlayerID.Player1, manager.ServingPlayer, "Match reset did not restore the opening serve.");
         AssertEqual(MatchState.Countdown, manager.CurrentState, "Match reset did not begin a new countdown.");
     }
 

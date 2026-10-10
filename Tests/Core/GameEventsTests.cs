@@ -11,15 +11,19 @@ public static class GameEventsTests
         Run("OnMeasure forwards measure index", TestMeasure);
         Run("OnPotatoLaunched forwards launch data", TestPotatoLaunched);
         Run("OnPotatoReachedHitZone forwards player", TestPotatoReachedHitZone);
+        Run("OnPotatoPositionUpdated forwards position", TestPotatoPositionUpdated);
         Run("OnPotatoExploded forwards player", TestPotatoExploded);
         Run("OnHitResolved forwards hit data", TestHitResolved);
+        Run("OnNoteHit forwards lane hit data", TestNoteHit);
         Run("OnPlayerMiss forwards player", TestPlayerMiss);
+        Run("OnNoteMiss forwards lane miss data", TestNoteMiss);
         Run("OnStreakUpdated forwards streak data", TestStreakUpdated);
         Run("OnStreakReset forwards player", TestStreakReset);
         Run("OnPowerUnlocked forwards power data", TestPowerUnlocked);
         Run("OnPowerActivated forwards power data", TestPowerActivated);
         Run("OnPowerExpired forwards power", TestPowerExpired);
         Run("OnHeatUpdated forwards normalized heat", TestHeatUpdated);
+        Run("OnPlayerHeatUpdated forwards player heat", TestPlayerHeatUpdated);
         Run("OnRoundStarted forwards round number", TestRoundStarted);
         Run("OnRoundEnded forwards score data", TestRoundEnded);
         Run("OnMatchEnded forwards winner", TestMatchEnded);
@@ -89,6 +93,14 @@ public static class GameEventsTests
         AssertEqual(PlayerID.Player2, received, "Target player was not forwarded.");
     }
 
+    private static void TestPotatoPositionUpdated()
+    {
+        float received = -999f;
+        GameEvents.OnPotatoPositionUpdated += pos => received = pos;
+        GameEvents.TriggerPotatoPositionUpdated(0.45f);
+        AssertEqual(0.45f, received, "Potato position was not forwarded.");
+    }
+
     private static void TestPotatoExploded()
     {
         PlayerID received = PlayerID.None;
@@ -115,12 +127,48 @@ public static class GameEventsTests
         AssertEqual(0.95f, receivedAccuracy, "Hit accuracy was not forwarded.");
     }
 
+    private static void TestNoteHit()
+    {
+        PlayerID receivedPlayer = PlayerID.None;
+        int receivedLane = -1;
+        HitResult receivedResult = HitResult.Miss;
+        float receivedAccuracy = 0;
+        GameEvents.OnNoteHit += (player, lane, result, accuracy) =>
+        {
+            receivedPlayer = player;
+            receivedLane = lane;
+            receivedResult = result;
+            receivedAccuracy = accuracy;
+        };
+
+        GameEvents.TriggerNoteHit(PlayerID.Player1, 2, HitResult.Great, 0.85f);
+        AssertEqual(PlayerID.Player1, receivedPlayer, "Note hit player was not forwarded.");
+        AssertEqual(2, receivedLane, "Note hit lane was not forwarded.");
+        AssertEqual(HitResult.Great, receivedResult, "Note hit result was not forwarded.");
+        AssertEqual(0.85f, receivedAccuracy, "Note hit accuracy was not forwarded.");
+    }
+
     private static void TestPlayerMiss()
     {
         PlayerID received = PlayerID.None;
         GameEvents.OnPlayerMiss += player => received = player;
         GameEvents.TriggerPlayerMiss(PlayerID.Player2);
         AssertEqual(PlayerID.Player2, received, "Player who missed was not forwarded.");
+    }
+
+    private static void TestNoteMiss()
+    {
+        PlayerID receivedPlayer = PlayerID.None;
+        int receivedLane = -1;
+        GameEvents.OnNoteMiss += (player, lane) =>
+        {
+            receivedPlayer = player;
+            receivedLane = lane;
+        };
+
+        GameEvents.TriggerNoteMiss(PlayerID.Player2, 3);
+        AssertEqual(PlayerID.Player2, receivedPlayer, "Note miss player was not forwarded.");
+        AssertEqual(3, receivedLane, "Note miss lane was not forwarded.");
     }
 
     private static void TestStreakUpdated()
@@ -174,9 +222,9 @@ public static class GameEventsTests
             receivedPower = power;
         };
 
-        GameEvents.TriggerPowerActivated(PlayerID.Player1, PowerType.GoldenPotato);
+        GameEvents.TriggerPowerActivated(PlayerID.Player1, PowerType.FreezePotato);
         AssertEqual(PlayerID.Player1, receivedPlayer, "Power user was not forwarded.");
-        AssertEqual(PowerType.GoldenPotato, receivedPower, "Activated power was not forwarded.");
+        AssertEqual(PowerType.FreezePotato, receivedPower, "Activated power was not forwarded.");
     }
 
     private static void TestPowerExpired()
@@ -193,6 +241,21 @@ public static class GameEventsTests
         GameEvents.OnHeatUpdated += heat => received = heat;
         GameEvents.TriggerHeatUpdated(0.72f);
         AssertEqual(0.72f, received, "Normalized heat was not forwarded.");
+    }
+
+    private static void TestPlayerHeatUpdated()
+    {
+        PlayerID receivedPlayer = PlayerID.None;
+        float receivedHeat = -1;
+        GameEvents.OnPlayerHeatUpdated += (player, heat) =>
+        {
+            receivedPlayer = player;
+            receivedHeat = heat;
+        };
+
+        GameEvents.TriggerPlayerHeatUpdated(PlayerID.Player1, 0.65f);
+        AssertEqual(PlayerID.Player1, receivedPlayer, "Player heat was not forwarded.");
+        AssertEqual(0.65f, receivedHeat, "Heat value was not forwarded.");
     }
 
     private static void TestRoundStarted()
@@ -255,15 +318,19 @@ public static class GameEventsTests
         GameEvents.OnMeasure += value => notifications++;
         GameEvents.OnPotatoLaunched += (from, to, targetTime, travelBeats) => notifications++;
         GameEvents.OnPotatoReachedHitZone += player => notifications++;
+        GameEvents.OnPotatoPositionUpdated += pos => notifications++;
         GameEvents.OnPotatoExploded += player => notifications++;
         GameEvents.OnHitResolved += (player, result, accuracy) => notifications++;
+        GameEvents.OnNoteHit += (player, lane, result, accuracy) => notifications++;
         GameEvents.OnPlayerMiss += player => notifications++;
+        GameEvents.OnNoteMiss += (player, lane) => notifications++;
         GameEvents.OnStreakUpdated += (player, streak, powerReady) => notifications++;
         GameEvents.OnStreakReset += player => notifications++;
         GameEvents.OnPowerUnlocked += (player, power) => notifications++;
         GameEvents.OnPowerActivated += (player, power) => notifications++;
         GameEvents.OnPowerExpired += power => notifications++;
         GameEvents.OnHeatUpdated += heat => notifications++;
+        GameEvents.OnPlayerHeatUpdated += (player, heat) => notifications++;
         GameEvents.OnRoundStarted += round => notifications++;
         GameEvents.OnRoundEnded += (winner, player1Score, player2Score) => notifications++;
         GameEvents.OnMatchEnded += winner => notifications++;
@@ -275,15 +342,19 @@ public static class GameEventsTests
         GameEvents.TriggerMeasure(1);
         GameEvents.TriggerPotatoLaunched(PlayerID.Player1, PlayerID.Player2, 10, 1);
         GameEvents.TriggerPotatoReachedHitZone(PlayerID.Player2);
+        GameEvents.TriggerPotatoPositionUpdated(0.5f);
         GameEvents.TriggerPotatoExploded(PlayerID.Player2);
         GameEvents.TriggerHitResolved(PlayerID.Player1, HitResult.Good, 0.5f);
+        GameEvents.TriggerNoteHit(PlayerID.Player1, 1, HitResult.Great, 0.8f);
         GameEvents.TriggerPlayerMiss(PlayerID.Player1);
+        GameEvents.TriggerNoteMiss(PlayerID.Player1, 0);
         GameEvents.TriggerStreakUpdated(PlayerID.Player1, 1, false);
         GameEvents.TriggerStreakReset(PlayerID.Player1);
         GameEvents.TriggerPowerUnlocked(PlayerID.Player1, PowerType.RocketPotato);
         GameEvents.TriggerPowerActivated(PlayerID.Player1, PowerType.RocketPotato);
         GameEvents.TriggerPowerExpired(PowerType.RocketPotato);
         GameEvents.TriggerHeatUpdated(0.5f);
+        GameEvents.TriggerPlayerHeatUpdated(PlayerID.Player1, 0.5f);
         GameEvents.TriggerRoundStarted(1);
         GameEvents.TriggerRoundEnded(PlayerID.Player1, 1, 0);
         GameEvents.TriggerMatchEnded(PlayerID.Player1);
