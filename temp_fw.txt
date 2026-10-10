@@ -1,0 +1,22 @@
+﻿    private void SpawnFeedbackWord(HitResult result)
+    {
+        if (feedbackWordPrefab == null || feedbackSpawnPoint == null) return;
+
+        GameObject fwObj = Instantiate(feedbackWordPrefab, feedbackSpawnPoint.position, Quaternion.identity);
+        FeedbackWord fw = fwObj.GetComponent<FeedbackWord>();
+        if (fw != null)
+        {
+            Sprite spriteToUse = null;
+            switch (result)
+            {
+                case HitResult.Perfect: spriteToUse = perfectSprite; break;
+                case HitResult.Good: spriteToUse = goodSprite; break;
+                case HitResult.Bad: spriteToUse = badSprite; break;
+                case HitResult.Miss: spriteToUse = missSprite; break;
+            }
+            if (spriteToUse != null)
+            {
+                fw.SetSprite(spriteToUse);
+            }
+        }
+    }

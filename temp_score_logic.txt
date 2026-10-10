@@ -1,0 +1,12 @@
+﻿            if (result != HitResult.Miss) 
+            {
+                combo++;
+                
+                int points = 0;
+                if (result == HitResult.Perfect) points = scorePerfect;
+                else if (result == HitResult.Good) points = scoreGood;
+                else if (result == HitResult.Bad) points = scoreBad;
+                
+                score += points + (combo * comboBonusMultiplier);
+
+                Debug.Log($"[{playerName}] {result.ToString().ToUpper()}! Score: {score} | Combo: {combo}");

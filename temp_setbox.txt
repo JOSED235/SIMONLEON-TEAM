@@ -1,0 +1,16 @@
+﻿    private void SetBoxColor(Renderer rend, Color color)
+    {
+        if (rend == null) return;
+        
+        if (rend is SpriteRenderer spriteRend)
+        {
+            spriteRend.color = color;
+            return;
+        }
+
+        rend.material.color = color;
+        if (rend.material.HasProperty("_BaseColor"))
+        {
+            rend.material.SetColor("_BaseColor", color);
+        }
+    }
