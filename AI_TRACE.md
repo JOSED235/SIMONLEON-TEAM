@@ -320,3 +320,14 @@
 - Archivos revisados: `Party Potato/Assets/Scripts/Core/GameEnums.cs`, `Party Potato/Assets/Scripts/Minigame/HotPotatoPressureMeter.cs`, `Party Potato/Assets/Scripts/Gameplay/PotatoHeatSystem.cs`, `Party Potato/Assets/Scripts/Gameplay/ComboSystem.cs`, `Party Potato/Assets/Scripts/Gameplay/PowerUpManager.cs`, `Party Potato/Assets/Scripts/Rhythm/PlayerInput.cs` y runners de `Tests/`.
 - Resumen: El cambio `Bad` → `Great` alinea el enum con el GDD y las pruebas actuales. Ambos runners pasan (65 Core y 40 Rhythm). La validacion no cubre todos los scripts de Unity: sigue una referencia `PowerType.Freeze` incompatible con `FreezePotato`; tambien quedan pendientes la contabilizacion unica de misses y la conexion real entre carga/tecla y activacion de poderes.
 - Limitaciones: No se ejecuto Unity Editor/Play Mode ni una compilacion completa del proyecto Unity; por tanto, los 105 tests no demuestran compilacion ni funcionamiento de toda la escena.
+
+## 2026-10-10 - Integración final del Backend: UI y Sonido Event-Driven
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Creación de scripts para UI (GameUI, VictoryScreen), Sonido (SfxPlayer) y actualización visual de la papa (BombController) mediante el bus de eventos GameEvents.
+- Archivos creados/modificados:
+  - `Party Potato/Assets/Scripts/UI/GameUI.cs`
+  - `Party Potato/Assets/Scripts/UI/VictoryScreen.cs`
+  - `Party Potato/Assets/Scripts/Audio/SfxPlayer.cs`
+  - `Party Potato/Assets/Scripts/Minigame/BombController.cs`
+- Resumen: Se finalizó el backend integrando la respuesta visual y sonora a los eventos de juego. `GameUI` reacciona a aciertos, rachas y presión; `VictoryScreen` maneja el estado de fin de partida escuchando `OnMatchStateChanged`; `SfxPlayer` dispara sonidos para eventos de acierto, explosión y poder; `BombController` se actualizó para reaccionar al calor actual y emitir señales de explosión. Con estos elementos, el backend en C# queda completamente terminado y delegable al integrador de Unity.
+- Limitaciones: Falta conectar las referencias en el Inspector de Unity (Textos, Botones, AudioSources) y desactivar los scripts legacy (PlayerInputController, HotPotatoPressureMeter) en la escena principal.

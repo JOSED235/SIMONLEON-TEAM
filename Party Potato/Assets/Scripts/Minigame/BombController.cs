@@ -1,25 +1,55 @@
 using UnityEngine;
 
+/// <summary>
+/// Controla la representación visual de la papa en la escena.
+/// Oscila rítmicamente entre los jugadores y reacciona al calor global y explosiones
+/// escuchando el bus de GameEvents.
+/// </summary>
 public class BombController : MonoBehaviour
 {
     [Header("Referencias")]
     [Tooltip("Posición del Jugador 1 (Izquierda)")]
     public Transform player1Pos;
-    
+
     [Tooltip("Posición del Jugador 2 (Derecha)")]
     public Transform player2Pos;
 
     [Header("Configuración de Ritmo")]
     [Tooltip("Cuántos golpes de ritmo (beats) le toma a la papa ir de un lado al otro")]
     public float beatsToCross = 2f; 
-    
+
     [Header("Estado de la Papa")]
     public bool isExploded = false;
-    public Material potatoMaterial; // Para cambiarla a rojo cuando se calienta
+    public Material potatoMaterial; 
+
+    private Color originalColor = Color.yellow;
+
+    private void Awake()
+    {
+        if (potatoMaterial != null)
+        {
+            originalColor = potatoMaterial.color;
+        }
+    }
+
+    private void OnEnable()
+    {
+        // Suscribirse a los eventos del ciclo de la papa
+        GameEvents.OnHeatUpdated += HandleHeatUpdated;
+        GameEvents.OnPotatoExploded += HandleExploded;
+        GameEvents.OnRoundStarted += HandleRoundStarted;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.OnHeatUpdated -= HandleHeatUpdated;
+        GameEvents.OnPotatoExploded -= HandleExploded;
+        GameEvents.OnRoundStarted -= HandleRoundStarted;
+    }
 
     private void Update()
     {
-        if (isExploded || RhythmManager.Instance == null) return;
+        if (isExploded || RhythmManager.Instance == null || !RhythmManager.Instance.isPlaying) return;
 
         // Obtenemos el progreso actual en beats (ej: va por el beat 15.34)
         float currentBeatProgress = RhythmManager.Instance.songPositionInBeats;
@@ -31,27 +61,35 @@ public class BombController : MonoBehaviour
         // 0 = Jugador 1, 1 = Jugador 2
         float pingPongValue = Mathf.PingPong(journeyProgress, 1f);
 
-        // Interpolamos la posición entre el Jugador 1 y el Jugador 2 usando el pingpong
-        transform.position = Vector3.Lerp(player1Pos.position, player2Pos.position, pingPongValue);
-    }
-
-    /// <summary>
-    /// Cambia el estado visual de la papa cuando un jugador falla el ritmo
-    /// </summary>
-    public void HeatUpPotato()
-    {
-        if(potatoMaterial != null)
+        // Interpolamos la posición entre el Jugador 1 y el Jugador 2
+        if (player1Pos != null && player2Pos != null)
         {
-            // La hace un poco más roja cada vez que alguien falla (simulación simple)
-            Color currentColor = potatoMaterial.color;
-            potatoMaterial.color = Color.Lerp(currentColor, Color.red, 0.4f);
+            transform.position = Vector3.Lerp(player1Pos.position, player2Pos.position, pingPongValue);
         }
     }
 
-    public void Explode()
+    private void HandleHeatUpdated(float heatNormalized)
+    {
+        if (potatoMaterial != null && !isExploded)
+        {
+            // Cambia gradualmente al color rojo según el nivel global de calor (0.0 a 1.0)
+            potatoMaterial.color = Color.Lerp(originalColor, Color.red, heatNormalized);
+        }
+    }
+
+    private void HandleExploded(PlayerID loser)
     {
         isExploded = true;
-        Debug.Log("💥 ¡BOOM! La papa explotó.");
-        // TODO: Instanciar sistema de partículas de explosión
+        Debug.Log($"[BombController] 💥 ¡BOOM! La papa explotó en el campo de {loser}.");
+        // TODO: Instanciar sistema de partículas de explosión aquí
+    }
+
+    private void HandleRoundStarted(int roundNumber)
+    {
+        isExploded = false;
+        if (potatoMaterial != null)
+        {
+            potatoMaterial.color = originalColor; // Restaurar color
+        }
     }
 }
