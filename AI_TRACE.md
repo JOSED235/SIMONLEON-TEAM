@@ -294,3 +294,11 @@
 - Tarea: Resolver errores de compilacion (CS0111/CS0101) por clases duplicadas tras el merge de la reorganizacion arquitectonica con feature/potato.
 - Archivos modificados/movidos: Se eliminaron los duplicados en Minigame/ (AIController, PowerUpManager, NoteObject, NoteSpawner, PlayerInput, RhythmManager) moviendolos con sus respectivos .meta a sus nuevas carpetas Gameplay/ y Rhythm/ para preservar las referencias (GUIDs) usadas en los Prefabs y en el SampleScene.
 - Resumen: El merge trajo los archivos tanto en su ubicacion antigua (Minigame/) como en la nueva (Gameplay/, Rhythm/). Para no romper las referencias de Unity, se priorizaron los .meta originales y se ubicaron los archivos en las nuevas carpetas segun la nueva arquitectura definida por el equipo.
+
+## 2026-10-10 - Correccion de Errores CS1061
+- Participante: Faiber Piedrahita
+- Tarea: Resolver errores CS1061 introducidos al sobrescribir accidentalmente el backend de Ritmo (RhythmManager) con versiones antiguas durante la resolucion del merge previo. Tambien arreglar compilacion del legacy PlayerInputController.
+- Archivos modificados/movidos:
+  - Party Potato/Assets/Scripts/Rhythm/RhythmManager.cs y NoteSpawner.cs (Restaurados a su version correcta de la arquitectura).
+  - Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs (Se vaciaron sus metodos dejandolo como cascaron para evitar errores CS1061 legacy).
+- Resumen: Se recupero el backend correcto que contiene isPlaying, isPaused, gameConfig, etc., lo cual resuelve los errores de compilacion en AIController y PlayerInput. Como el antiguo script PlayerInputController.cs seguia en la escena dependiente de metodos borrados (GetCurrentProgress()), se vacio su logica Update para permitir compilar y asi poder reemplazarlo en Unity mas adelante.
