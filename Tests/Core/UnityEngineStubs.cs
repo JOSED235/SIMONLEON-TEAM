@@ -109,6 +109,41 @@ namespace UnityEngine
         public RangeAttribute(float minimum, float maximum) { }
     }
 
+    public static class Mathf
+    {
+        public static float Abs(float f) { return System.Math.Abs(f); }
+        public static float Max(float a, float b) { return System.Math.Max(a, b); }
+        public static float Min(float a, float b) { return System.Math.Min(a, b); }
+        public static int FloorToInt(float f) { return (int)System.Math.Floor(f); }
+        public static float Round(float f) { return (float)System.Math.Round(f); }
+        public static float Clamp01(float value)
+        {
+            if (value < 0f) return 0f;
+            if (value > 1f) return 1f;
+            return value;
+        }
+    }
+
+    public static class AudioSettings
+    {
+        private static double dsp = 100.0;
+        public static double dspTime
+        {
+            get { return dsp; }
+            set { dsp = value; }
+        }
+    }
+
+    public class AudioSource : MonoBehaviour
+    {
+        public bool isPlaying { get; set; }
+        public double scheduledTime { get; set; }
+        public void PlayScheduled(double time) { scheduledTime = time; isPlaying = true; }
+        public void Stop() { isPlaying = false; }
+        public void Pause() { isPlaying = false; }
+        public void UnPause() { isPlaying = true; }
+    }
+
     [System.AttributeUsage(System.AttributeTargets.Field)]
     public sealed class SerializeField : System.Attribute { }
 }

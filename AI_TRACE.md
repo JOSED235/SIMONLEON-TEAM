@@ -70,3 +70,16 @@
 - Resumen: Se migraron los archivos de la carpeta provisional `Minigame/` a las carpetas estandarizadas `Gameplay/` y `Rhythm/`. Se actualizaron las enumeraciones (`GameEnums`) agregando `LaneDirection` (4 carriles FNF), `GameMode` (1v1 Local / Solo vs CPU), `AIDifficulty` (Facil, Normal, Dificil) y la escala completa de calificaciones `HitResult` (Miss, Good, Great, Perfect). Se calibro `GameConfig` con los valores oficiales de diseno (tolerancias de 50, 100 y 150 ms, incremento de +20% calor por miss y umbral de explosion al 100%). Se ampliaron los disparadores de `GameEvents` para cubrir impactos por carril, posicion continua de la papa y actualizacion de calor. Se refactorizo `MatchManager` para resolver rondas unicamente tras la detonacion de la papa (`OnPotatoExploded`) eliminando la finalizacion prematura por fallo individual y permitiendo juego continuo simultaneo.
 - Pruebas realizadas: Ejecucion automatizada de `Tests/run-core-tests.ps1` compilando la suite completa; las 35 pruebas unitarias pasaron satisfactoriamente.
 - Limitaciones: Falta conectar la emision real de calor desde `PotatoHeatSystem.cs` y el mapeo de teclas en `PlayerInput.cs`.
+
+## 2026-10-10 - Refactorizacion y Completitud de RhythmManager
+
+- Participante: Felipe Calderon
+- Tarea: Implementacion del reloj musical de alta precision, conversiones bidireccionales y evaluacion desacoplada en RhythmManager.cs.
+- Archivos creados/modificados:
+  - `Party Potato/Assets/Scripts/Rhythm/RhythmManager.cs`
+  - `Tests/Core/UnityEngineStubs.cs`
+  - `Tests/Rhythm/RhythmManagerTests.cs`
+  - `Tests/run-rhythm-tests.ps1`
+- Resumen: Se actualizo RhythmManager para operar como unico reloj musical basado estrictamente en AudioSettings.dspTime. Se anadieron metodos de conversion bidireccional (BeatToDspTime, DspTimeToBeat, BeatToSongPosition, SongPositionToBeat) para permitir que notas y carriles calculen sus tiempos objetivo sin depender de la tasa de fotogramas ni de posiciones visuales. Se incorporo emision automatica de eventos OnBeat y OnMeasure a traves de GameEvents en cada pulso de la cancion. Se implemento el metodo EvaluateHit para clasificar notas en Perfect (+-50 ms), Great (+-100 ms), Good (+-150 ms) y Miss segun GameConfig, soportando reduccion de ventana por Papa Electrica.
+- Pruebas realizadas: Se compilaron y ejecutaron 5 pruebas unitarias automatizadas en `Tests/run-rhythm-tests.ps1` (calculo de duracion de beats por BPM, conversiones matematicas, ciclo de reproduccion, evaluacion de ventanas de impacto y tolerancia de Papa Electrica), aprobando al 100%. Adicionalmente se verificaron las 35 pruebas de Core en `Tests/run-core-tests.ps1`.
+- Limitaciones: Falta conectar la generacion de notas por patrones en `NoteSpawner.cs`, el manejo de auto-miss en `NoteObject.cs` y la lectura de entradas del teclado en `PlayerInput.cs`.
