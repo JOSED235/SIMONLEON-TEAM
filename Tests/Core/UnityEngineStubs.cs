@@ -17,6 +17,9 @@ namespace UnityEngine
     public class GameObject : Object
     {
         public bool Destroyed { get; set; }
+        public Transform transform = new Transform();
+        public T GetComponent<T>() where T : class { return null; }
+        public T AddComponent<T>() where T : class, new() { return new T(); }
     }
 
     public class ScriptableObject : Object
@@ -30,6 +33,15 @@ namespace UnityEngine
     public class MonoBehaviour : Object
     {
         public GameObject gameObject = new GameObject();
+        public Transform transform = new Transform();
+
+        public T GetComponent<T>() where T : class { return null; }
+        public T AddComponent<T>() where T : class, new() { return new T(); }
+
+        public static GameObject Instantiate(GameObject original, Vector3 pos, Quaternion rot, Transform parent = null)
+        {
+            return new GameObject();
+        }
 
         protected Coroutine StartCoroutine(IEnumerator routine)
         {
@@ -104,6 +116,9 @@ namespace UnityEngine
     }
 
     [System.AttributeUsage(System.AttributeTargets.Field)]
+    public sealed class HideInInspector : System.Attribute { }
+
+    [System.AttributeUsage(System.AttributeTargets.Field)]
     public sealed class RangeAttribute : System.Attribute
     {
         public RangeAttribute(float minimum, float maximum) { }
@@ -142,6 +157,59 @@ namespace UnityEngine
         public void Stop() { isPlaying = false; }
         public void Pause() { isPlaying = false; }
         public void UnPause() { isPlaying = true; }
+    }
+
+    public struct Vector3
+    {
+        public float x, y, z;
+        public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
+        public static Vector3 zero { get { return new Vector3(0, 0, 0); } }
+        public static Vector3 Lerp(Vector3 a, Vector3 b, float t)
+        {
+            t = Mathf.Clamp01(t);
+            return new Vector3(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t);
+        }
+    }
+
+    public struct Quaternion
+    {
+        public static Quaternion identity { get { return new Quaternion(); } }
+    }
+
+    public class Transform : Object
+    {
+        public Vector3 position { get; set; }
+    }
+
+    public struct Color
+    {
+        public float r, g, b, a;
+        public Color(float r, float g, float b, float a) { this.r = r; this.g = g; this.b = b; this.a = a; }
+    }
+
+    public class SpriteRenderer : MonoBehaviour
+    {
+        public Color color { get; set; }
+    }
+
+    public enum KeyCode
+    {
+        None = 0,
+        LeftArrow, DownArrow, UpArrow, RightArrow,
+        A, S, W, D,
+        Return, Space, RightShift, LeftShift
+    }
+
+    public static class Input
+    {
+        public static bool GetKeyDown(KeyCode key) { return false; }
+    }
+
+    public static class Random
+    {
+        private static System.Random rng = new System.Random();
+        public static int Range(int min, int max) { return rng.Next(min, max); }
+        public static float Range(float min, float max) { return (float)(min + rng.NextDouble() * (max - min)); }
     }
 
     [System.AttributeUsage(System.AttributeTargets.Field)]

@@ -6,8 +6,12 @@ $sourceFiles = @(
     (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Core\GameEvents.cs"),
     (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Core\GameConfig.cs"),
     (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Rhythm\RhythmManager.cs"),
+    (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Rhythm\NoteObject.cs"),
+    (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Rhythm\NoteSpawner.cs"),
+    (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Rhythm\PlayerInput.cs"),
     (Join-Path $PSScriptRoot "Core\UnityEngineStubs.cs"),
-    (Join-Path $PSScriptRoot "Rhythm\RhythmManagerTests.cs")
+    (Join-Path $PSScriptRoot "Rhythm\RhythmManagerTests.cs"),
+    (Join-Path $PSScriptRoot "Rhythm\NoteAndInputTests.cs")
 )
 
 foreach ($sourceFile in $sourceFiles) {
@@ -19,10 +23,12 @@ foreach ($sourceFile in $sourceFiles) {
 Add-Type -Path $sourceFiles -ErrorAction Stop
 
 try {
-    $rhythmTests = [RhythmManagerTests]::RunAll()
-    Write-Output "PASS: $rhythmTests rhythm tests completed successfully."
+    $rmTests = [RhythmManagerTests]::RunAll()
+    $noteTests = [NoteAndInputTests]::RunAll()
+    $total = $rmTests + $noteTests
+    Write-Output "PASS: $total rhythm and input tests completed successfully."
 }
 catch {
-    Write-Error "Rhythm tests failed: $($_.Exception.Message)"
+    Write-Error "Rhythm and input tests failed: $($_.Exception.Message)"
     exit 1
 }
