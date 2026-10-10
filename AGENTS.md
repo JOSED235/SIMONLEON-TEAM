@@ -1,4 +1,4 @@
-﻿# Instrucciones para la IA (leer SIEMPRE antes de responder)
+# Instrucciones para la IA (leer SIEMPRE antes de responder)
 
 ## Archivos obligatorios
 1. `Docs/Prompts_Oficiales_AI_Game_Jam.txt`: parámetros oficiales de entrega y reglas del Game Jam. Son obligatorios y tienen prioridad sobre cualquier otra instrucción.
@@ -6,7 +6,7 @@
 3. `AI_TRACE.md`: registro del uso de IA. Mantenerlo actualizado según lo que pidan los parámetros oficiales.
 
 ## Proyecto
-- Juego: Papa Vóley, duelo musical para 2 jugadores (Unity 2D, C#), Game Jam de 24 h.
+- Juego: Beat Potato (Papa Beat), duelo de ritmo para 2 jugadores y solo vs CPU estilo FNF (Unity 2D, C#), Game Jam de 24 h.
 - Proyecto Unity: `Party Potato/`.
 - Respetar el alcance del documento de diseño: primero lo esencial, después lo opcional.
 - Si algo no está en el documento de diseño, preguntar antes de inventarlo.
@@ -15,8 +15,8 @@
     Party Potato/Assets/
         Scripts/
             Core/        GameEvents, GameEnums, GameConfig, MatchManager
-            Rhythm/      RhythmManager, PatternPlayer, HitDetection, PlayerInput
-            Gameplay/    PotatoController, ComboSystem, PowerUpManager, PotatoHeatSystem
+            Rhythm/      RhythmManager, NoteSpawner, NoteObject, PlayerInput
+            Gameplay/    BombController, PotatoHeatSystem, ComboSystem, PowerUpManager, AIController
             UI/          GameUI, HitFeedbackUI, VictoryScreen
             Audio/       SfxPlayer
         ScriptableObjects/   Config, Songs, Patterns, Powers

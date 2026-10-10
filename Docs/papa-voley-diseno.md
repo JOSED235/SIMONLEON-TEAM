@@ -1,416 +1,226 @@
-# 🌶️ PAPA VÓLEY: diseño refinado del minijuego musical
-
-Centrarse en un solo minijuego es una decisión mucho mejor para un Game Jam de 24 horas. En lugar de tener tres minijuegos sencillos, se puede construir uno con personalidad, mecánicas interesantes y suficiente variedad para que la gente quiera volver a jugarlo.
-
-La idea tiene potencial: una papa caliente que viaja entre dos jugadores al ritmo de la música, con una mecánica inspirada en Guitar Hero, rachas de aciertos y poderes para perjudicar al rival.
-
-Pero el cambio importante es este: no diseñarlo como un Guitar Hero en el que simplemente pulsas una tecla cuando llega la papa. Convertirlo en un **duelo musical** donde cada golpe cambia el ritmo, la presión y las posibilidades de ambos jugadores.
-
-**La fantasía del juego:** estás intentando deshacerte de una papa que está cada vez más caliente, pero tu rival puede cambiar las reglas, acelerar la música o devolvértela cuando menos te lo esperas.
+# BEAT POTATO (PAPA BEAT): Documento de Diseno de Juego (GDD)
+### Duelo Ritmico Arcade 1v1 y Solo vs CPU estilo Friday Night Funkin'
 
 ---
 
-## 1. La identidad del juego
+## 1. Resumen Ejecutivo y Pitch
 
-# PAPA VÓLEY
+Beat Potato es un juego de ritmo arcade para dos jugadores en un mismo PC (con opcion de juego individual contra la maquina) que combina las mecanicas de 4 carriles de Friday Night Funkin' con la dinamica eliminatoria y tension de la papa caliente.
 
-*Un duelo musical de reflejos, rachas y sabotajes.*
+Una papa a punto de estallar viaja entre dos contrincantes al compas de la musica. Cada jugador cuenta con su propio panel de 4 carriles (Izquierda, Abajo, Arriba, Derecha) y debe presionar las teclas en el momento exacto en que las notas cruzan la zona de impacto (HitZone). Acertar con precision (Perfect, Great, Good) mantiene la papa en juego, la empuja hacia el campo rival y acumula rachas para desatar poderes de sabotaje. Cometer fallos (Miss) retiene la papa en el campo propio y eleva su nivel de calor hasta que explota en las manos del jugador.
 
-Dos jugadores compiten en una cancha arcade. Una papa caliente viaja de un lado a otro siguiendo el ritmo de la música. Cuando llega a la zona de golpeo, el jugador debe pulsar el botón en el momento correcto para devolverla.
-
-Cada acierto aumenta la intensidad. Las rachas permiten desbloquear poderes, y los errores hacen que la papa se caliente, se descontrole o termine explotando.
-
-**Objetivo:** sobrevivir más que el rival y conseguir que sea él quien falle primero.
-
-### Los pilares del diseño
-
-- **Fácil de entender:** basta con observar la papa y pulsar un botón al ritmo.
-- **Difícil de dominar:** la velocidad, los patrones y los poderes obligan a adaptarse.
-- **Competitivo:** no juegas solo para conseguir puntos; intentas poner al rival en aprietos.
-- **Impredecible, pero justo:** los poderes cambian las condiciones, pero ambos jugadores pueden entender qué está pasando y reaccionar.
-- **Partidas cortas:** cada duelo debería durar aproximadamente entre 60 y 120 segundos, con posibilidad de revancha inmediata.
-
-> Recomendación: que el juego se pueda explicar en diez segundos, pero que después de un minuto todavía puedan aparecer situaciones nuevas.
+**Pitch oficial:**
+Friday Night Funkin' se fusiona con la Papa Caliente: pulsa las notas al compas de la musica, acumula rachas de aciertos para lanzar poderes y evita que la papa se sobrecaliente en tu lado antes de que te explote.
 
 ---
 
-## 2. El ciclo principal de juego
+## 2. Pilares de Diseno
 
-La mecánica fundamental debe ser muy clara. Este es el ciclo que se repite durante la partida:
-
-1. **La papa viaja por la línea musical.** Baja hacia la zona de golpeo siguiendo el tempo de la canción.
-2. **El jugador pulsa en el momento correcto.** El juego mide la precisión temporal del golpe.
-3. **La papa vuelve al rival.** Una animación de golpe la lanza hacia el otro lado, con un nuevo patrón de llegada.
-4. **Las rachas desbloquean poderes.** El jugador puede modificar el próximo intercambio y complicarle la vida al rival.
-5. **Alguien falla.** La papa explota, aparece una animación cómica y se declara al ganador.
-
-La clave es que cada intercambio tenga una consecuencia: un acierto normal mantiene la partida; un acierto perfecto construye una racha; una racha habilita un poder; y un error puede cambiar inmediatamente el resultado.
-
----
-
-## 3. La línea musical: cómo funcionaría realmente
-
-Esta es la parte más importante de la implementación.
-
-En lugar de mover una papa libremente por una cancha con físicas complejas, se utiliza una **línea musical vertical con una zona de impacto fija**, similar a un juego de ritmo. La papa baja por esa línea y el jugador pulsa el botón cuando cruza la zona objetivo.
-
-### Vista conceptual del minijuego
-
-```
-Jugador 1
-RACHA: 7
-CALOR: 72%
-
-PATRÓN MUSICAL
-♪ · ♪ · ♫ · ♪
-
-        🥔  PAPA
-
-    ─── ZONA DE IMPACTO ───
-  PERFECTO · BIEN · FALLASTE
-
-PULSA ESPACIO
-Golpea cuando la papa llegue a la zona
-```
-
-*Maqueta conceptual de la interfaz, no una captura del juego final.*
-
-### Las reglas de precisión
-
-El juego debe reconocer tres resultados:
-
-| Resultado | Regla inicial sugerida         | Efecto                                                 |
-| --------- | ------------------------------ | ------------------------------------------------------ |
-| Perfecto  | Error de hasta ±70 ms          | Construye racha y carga poder.                         |
-| Bien      | Error de hasta ±150 ms         | Devuelve la papa, pero no suma tanto.                  |
-| Fallo     | Fuera de la ventana de acierto | La papa quema al jugador y pierde una vida o la ronda. |
-
-Estos valores son puntos de partida, no reglas definitivas. Deben ajustarse con pruebas reales para que el juego se sienta justo y responda bien al teclado.
-
-### ¿Cómo se conecta la papa con la música?
-
-La música debe ser la referencia del juego, no un fondo que suena mientras la papa se mueve por su cuenta.
-
-- La canción tiene un tempo definido en BPM (pulsos por minuto).
-- La papa se programa para alcanzar la zona de impacto en un pulso determinado.
-- El jugador puede anticipar los golpes escuchando la música.
-- Al devolverla, se programa su siguiente llegada siguiendo la misma cuadrícula musical.
-- Si se activa un poder que acelera la papa, se reduce el tiempo hasta el próximo golpe, sin desincronizar toda la canción.
-
-Para el prototipo, empezar con una canción de tempo constante y patrones sencillos. No hace falta detectar automáticamente los beats de cualquier canción: se pueden definir manualmente los tiempos de los golpes.
-
-> **Decisión técnica importante:** la música debe ser la fuente de referencia temporal. En Unity, conviene sincronizar los golpes con `AudioSettings.dspTime` y programar el audio con `AudioSource.PlayScheduled`, en lugar de depender exclusivamente de `Time.deltaTime`. Así se reduce el riesgo de que la papa y la música se desincronicen.
+1. **Ritmo Accesible y Competitivo:**
+   Mecanica de 4 direcciones intuitiva y directa, respaldada por un motor de audio de alta precision basado en AudioSettings.dspTime y ventanas de calificacion claras.
+2. **Tension y Traspaso de la Papa Caliente:**
+   El resultado no depende de un puntaje pasivo; la papa viaja fisicamente por la pantalla entre los dos jugadores. Los aciertos transfieren la presion al oponente; los fallos retienen la papa en el lado propio y aumentan su calor critico.
+3. **Rachas y Sabotaje Estrategico:**
+   Mantener cadenas de notas perfectas recompensa con poderes especiales de un solo uso para alterar la pantalla o notas del rival (velocidad aumentada, notas invisibles, distorsion), forzando su equivocacion.
+4. **Experiencia Local Compartida y Modo Solitario:**
+   Disenado de forma nativa para que dos personas jueguen hombro a hombro en el mismo teclado fisico sin interferencias, integrando ademas una IA con niveles de dificultad configurables para partidas individuales.
 
 ---
 
-## 4. Sistema de rachas: que jugar bien tenga recompensa
+## 3. Modos de Juego
 
-Aquí es donde el juego puede empezar a ser mucho más que un clon de Guitar Hero.
+### A. Modo Duelo Local (1 vs 1 en el Mismo PC)
+- Dos jugadores comparten la misma pantalla y teclado.
+- El panel de juego se divide en dos lados: Jugador 1 a la izquierda y Jugador 2 a la derecha, con la papa desplazandose en el centro.
+- Cada jugador procesa su propia secuencia de notas descendentes en 4 carriles.
 
-Cada jugador tiene una racha individual. Si golpea correctamente varias veces seguidas, llena un medidor de energía y obtiene acceso a poderes.
-
-### Medidor de racha
-
-```
-Jugador 1
-7 / 8 aciertos
-Un acierto perfecto más desbloquea un poder.
-```
-
-- **Racha de 3:** el medidor comienza a cargarse y la papa emite un brillo especial.
-- **Racha de 5:** se desbloquea una habilidad menor o una carga adicional.
-- **Racha de 8:** se habilita un poder especial más fuerte.
-
-**Recomendación para la primera versión:** no implementar cinco niveles de poder desde el principio. Usar un único umbral: **cinco aciertos perfectos consecutivos para conseguir una carga de poder**. Es más fácil de programar, probar y explicar. Después, si queda tiempo, se puede añadir un segundo nivel.
-
-### ¿Qué pasa si alguien falla?
-
-- Se reinicia su racha.
-- Si tenía un poder disponible, puede conservarlo, salvo que el poder sea parte de una habilidad defensiva ya consumida.
-- El rival recibe una recompensa pequeña por el error: por ejemplo, un poco más de calor para la papa o una carga parcial de energía.
-
-Así se evita que un solo fallo convierta toda la partida en una derrota inevitable.
+### B. Modo Solo (1 Jugador vs La Maquina / CPU)
+- El jugador humano toma el control de uno de los lados.
+- El oponente es operado por un controlador de inteligencia artificial (AIController.cs) sincronizado con el compas de la pista musical.
+- **Dificultades de la CPU:**
+  - **Facil (Papa Tibia):** Precision aproximada del 70%, calificaciones predominantes de Good y fallos frecuentes en ritmos rapidos.
+  - **Normal (Papa Caliente):** Precision del 85%, combina Great y Perfect, fallos ocasionales bajo presion.
+  - **Dificil (Papa Volcanica):** Precision del 96%, encadena rachas altas y utiliza poderes contra el jugador humano de forma activa.
 
 ---
 
-## 5. El sistema de poderes: la parte más divertida
+## 4. Esquema de Controles (Mismo Teclado)
 
-Los poderes no deben ser simples mejoras de puntuación. Deben cambiar las reglas del próximo intercambio durante unos segundos y crear decisiones interesantes.
+Para brindar comodidad fisica y evitar conflictos de pulsaciones simultaneas (ghosting), los controles se distribuyen en ambos extremos del teclado:
 
-Para evitar que sean difíciles de desarrollar, **todos los poderes se activan con la misma tecla y se consumen al usarlos**. Lo que cambia es su efecto.
+| Accion | Jugador 1 (Lado Izquierdo) | Jugador 2 (Lado Derecho) | Modo vs CPU |
+| :--- | :--- | :--- | :--- |
+| **Carril Izquierdo (Lane 0)** | **Flecha Izquierda (LeftArrow)** | **Tecla A** | Humano usa su configuracion |
+| **Carril Abajo (Lane 1)** | **Flecha Abajo (DownArrow)** | **Tecla S** | Humano usa su configuracion |
+| **Carril Arriba (Lane 2)** | **Flecha Arriba (UpArrow)** | **Tecla W** | Humano usa su configuracion |
+| **Carril Derecha (Lane 3)** | **Flecha Derecha (RightArrow)** | **Tecla D** | Humano usa su configuracion |
+| **Poder Especial** | **Tecla Enter / Shift Derecho** | **Barra Espaciadora / Shift Izquierdo** | CPU lo activa por racha |
 
-### 1. ¡Papa Cohete! — Prioridad alta
-
-**Efecto:** el próximo pase llega un 20–25 % más rápido.
-
-La papa deja una estela de fuego y el rival dispone de menos tiempo para reaccionar. La música puede incorporar un efecto breve de aceleración, pero no necesita cambiar el tempo de la canción completa.
-
-**Contrajuego:** el rival ve la animación de carga y sabe que el próximo pase será rápido.
-
-### 2. Papa Eléctrica — Prioridad alta
-
-**Efecto:** el próximo golpe del rival tiene una ventana de precisión reducida temporalmente.
-
-La zona de impacto se ilumina y aparece un efecto eléctrico. Por ejemplo, la ventana de «Perfecto» se reduce de ±70 ms a ±50 ms durante un único golpe.
-
-**Contrajuego:** el rival sigue teniendo una oportunidad clara de devolver la papa. No se trata de bloquear sus controles.
-
-### 3. Papa Fantasma — Prioridad media
-
-**Efecto:** la papa desaparece brevemente y reaparece cerca de la zona de impacto.
-
-Crea un pequeño engaño visual. El rival debe mantener la atención en la zona de golpeo en vez de confiar únicamente en la posición anterior.
-
-**Contrajuego:** una señal visual y sonora avisa del engaño. No debe convertirse en una trampa imposible de leer.
-
-### 4. Papa Congelada — Prioridad media
-
-**Efecto:** el próximo golpe cambia ligeramente su anticipación musical. La papa llega un poco antes o después del pulso esperado.
-
-Se indica visualmente que la papa está congelada y se utiliza un efecto de sonido distinto.
-
-**Contrajuego:** el cambio debe ser pequeño y coherente con el ritmo. Para el prototipo inicial, dejarlo como una variante de patrón y no como una alteración impredecible del tiempo.
-
-### 5. Papa Dorada — Prioridad baja
-
-**Efecto:** durante los siguientes dos golpes correctos, el jugador obtiene puntos extra y carga más rápido su siguiente poder.
-
-No perjudica directamente al rival, pero recompensa jugar bien bajo presión.
-
-**Contrajuego:** el rival puede intentar romper la racha antes de que se complete la bonificación.
-
-### Cómo evitar que los poderes rompan el equilibrio
-
-Cuatro reglas:
-
-1. Solo se puede tener **una carga almacenada**.
-2. Los poderes **no pueden cancelar el golpe del rival ni impedirle jugar**.
-3. Cada poder debe tener una **señal visual clara antes de surtir efecto**.
-4. **No se pueden encadenar poderes** sobre un mismo golpe.
-
-> **Para el Game Jam:** implementar primero **Papa Cohete** y **Papa Dorada**. Son fáciles de entender, diferentes entre sí y permiten probar tanto el sabotaje como la recompensa por jugar bien. Después añadir Papa Eléctrica si el núcleo funciona.
+*Nota:* El sistema permite invertir la asignacion (Jugador 1 con WASD y Jugador 2 con Flechas) desde la configuracion de partida.
 
 ---
 
-## 6. Cómo evitar que la partida se vuelva repetitiva
+## 5. El Ciclo Principal de Juego (Core Loop)
 
-Tener poderes no es suficiente. Si todas las secuencias musicales son iguales, después de 30 segundos el jugador ya habrá visto todo.
-
-La variedad debería provenir de cuatro sistemas sencillos, combinados de forma controlada.
-
-### A. Patrones musicales diferentes
-
-No todas las llegadas de la papa deben ocurrir en cada pulso. Se pueden definir patrones que utilicen la misma línea, pero cambien la distribución de los golpes.
-
-**Patrón 1: Ritmo constante** — ideal para aprender.
-
+```mermaid
+flowchart TD
+    A["Inicio de Partida: RhythmManager arranca audio con dspTime exacto"] --> B["NoteSpawner genera notas en 4 carriles hacia la HitZone"]
+    B --> C["El jugador presiona la direccion correspondiente al compas"]
+    C --> D{"Evaluacion temporal de impacto"}
+    D -- "Perfect / Great / Good" --> E["Suma racha + Empuja papa hacia el rival"]
+    D -- "Miss / Fuera de tiempo" --> F["Racha se reinicia a 0 + Papa se queda y suma calor (+20%)"]
+    E --> G{"Racha alcanza umbral (5 aciertos)?"}
+    G -- Si --> H["Poder Especial disponible para activar"]
+    G -- No --> I["Continua el flujo de notas"]
+    H --> I
+    F --> J{"Calor de la papa llega al 100%?"}
+    J -- No --> I
+    J -- Si --> K["La papa estalla en el campo del jugador"]
+    K --> L["Fin de ronda / Pantalla de Victoria"]
 ```
-●  ●  ●  ●  ●  ●  ●  ●
-```
-
-**Patrón 2: Pausas inesperadas** — alterna golpes rápidos con pequeños silencios.
-
-```
-●  —  ●  ●  —  ●  —  ●
-```
-
-**Patrón 3: Doble golpe** — dos llegadas rápidas seguidas de una pausa.
-
-```
-●  ●  —  ●  ●  —  ●  ●
-```
-
-No hace falta un editor de mapas musicales. Se pueden guardar patrones como listas de tiempos relativos y reutilizarlos a distintas velocidades.
-
-### B. Fases de intensidad
-
-La partida puede durar unos 90 segundos, divididos en tres fases.
-
-| Tiempo   | Fase             | Descripción                                                                                  |
-| -------- | ---------------- | -------------------------------------------------------------------------------------------- |
-| 0–30 s   | Calentamiento    | Velocidad moderada, patrones simples y oportunidad de conseguir la primera racha.            |
-| 30–60 s  | La papa arde     | Se introducen pausas, dobles golpes y poderes más frecuentes.                                |
-| 60–90 s  | Modo infierno    | Ritmo rápido, menos margen para errores y efectos visuales más intensos, sin hacer imposible la canción. |
-
-Los tiempos son orientativos. La partida debe terminar antes si alguien pierde, y las fases deben adaptarse a la duración real de la canción.
-
-### C. Eventos especiales
-
-Cada 15–20 segundos puede aparecer un evento anunciado con una señal visual y sonora:
-
-- **Silencio incómodo:** desaparecen algunos instrumentos, pero la referencia del ritmo continúa.
-- **Fiebre de papa:** aumenta la velocidad durante unos pocos golpes.
-- **Doble o nada:** un golpe perfecto otorga una carga adicional; fallar tiene una penalización mayor.
-- **Intercambio loco:** ambos jugadores intercambian sus colores o efectos visuales durante unos segundos.
-
-No implementar todos en la primera versión. Dos eventos bien pulidos son mejores que seis que apenas se entienden.
-
-### D. Variabilidad en las decisiones
-
-La variedad más interesante no viene de poner cada vez más obstáculos. Viene de que el jugador tenga decisiones reales:
-
-- ¿Uso mi poder ahora o espero a una secuencia difícil?
-- ¿Intento conseguir una racha más larga para ganar una carga mejor?
-- ¿Aprovecho que el rival está cerca de fallar para acelerar la papa?
-- ¿Me concentro en acertar perfectamente o me conformo con devolverla?
-
-El jugador debe sentir que está jugando contra una persona, no solamente contra un cronómetro.
 
 ---
 
-## 7. ¿Cómo se gana? El sistema de victoria
+## 6. Sistema de Notas y Calificaciones (Hit Timing)
 
-Para evitar que el juego se vuelva demasiado largo, la condición principal es **fallar un golpe**: la papa explota en las manos del jugador que no consigue devolverla a tiempo.
+Las notas se desplazan verticalmente por los carriles hacia una zona de impacto fija (HitZone). La precision se mide comparando el tiempo exacto de pulsacion del jugador contra el tiempo programado del beat:
 
-Pero hay que evitar que los poderes conviertan la partida en algo injusto. Por eso:
+| Calificacion | Margen de Tolerancia | Puntaje | Impacto en Racha | Efecto en la Papa |
+| :--- | :--- | :--- | :--- | :--- |
+| **PERFECT** | +-50 ms (Precision >= 90%) | +100 pts | +1 Racha, recarga rapida de poder | Empuja la papa al rival a maxima velocidad y reduce calor propio. |
+| **GREAT** | +-100 ms (Precision 70% - 89%) | +50 pts | +1 Racha | Desplaza la papa hacia el rival a velocidad regular. |
+| **GOOD** | +-150 ms (Precision 50% - 69%) | +25 pts | Conserva la racha actual | Devuelve la papa pero sin empuje extra; no carga poder. |
+| **MISS** | > +-150 ms o nota no presionada | 0 pts | **Reinicia racha a 0** | La papa se queda en el campo del jugador y suma **+20% de calor**. |
 
-- Un golpe fallido termina la partida.
-- Los aciertos normales permiten sobrevivir.
-- Los aciertos perfectos cargan poderes.
-- Los poderes modifican el siguiente intercambio, pero siempre dejan una posibilidad razonable de responder.
-- El jugador que usa un poder no obtiene automáticamente la victoria: debe seguir acertando sus propios golpes.
-
-Para las primeras pruebas, partidas **al mejor de tres rondas**. Así un solo error no elimina toda la diversión de una sesión, pero cada ronda sigue teniendo tensión.
-
-### ¿Y si queremos una partida más larga?
-
-Se puede añadir un sistema de vidas: cada jugador empieza con tres, pierde una por fallo y la partida termina cuando alguien pierde las tres. Sin embargo, esto requiere más tiempo para equilibrar las vidas, los poderes y la duración. **No incluirlo en el primer prototipo.**
+### Reglas de Evaluacion:
+- **Consumo Unico:** Cada nota solo puede ser evaluada una vez. Al impactar o fallar, se procesa y se destruye.
+- **Auto-Miss:** Si una nota cruza la HitZone y supera el margen permitido sin ser presionada (progress > 1.2f), se destruye automaticamente y dispara el evento de fallo.
+- **Proteccion Anti-Spam:** Presionar una tecla sin que existan notas validas dentro de la ventana de impacto no otorga puntos y puede ser penalizado para evitar el machacado continuo de teclas.
 
 ---
 
-## 8. La interfaz que necesita el juego
+## 7. La Mecanica de la Papa: Traspaso, Calor y Explosion
 
-La pantalla debe permitir entender el estado de la partida de un vistazo.
+La papa es el elemento central de peligro y tension del juego:
+
+1. **Movimiento Ritmico (BombController.cs):**
+   - La papa se traslada horizontalmente entre el Jugador 1 y el Jugador 2 mediante interpolacion suave basada en el reloj musical (Mathf.PingPong sincronizado con dspTime).
+2. **Dinamica de Traspaso:**
+   - Cada acierto exitoso impulsa la posicion de la papa hacia el campo del oponente, alejando el peligro.
+   - Si un jugador comete un fallo (Miss), la papa frena su avance y retrocede inmediatamente hacia el lado de quien cometio el error.
+3. **Medidor de Calor (PotatoHeatSystem.cs):**
+   - Inicia en 0% y sube progresivamente hasta un maximo de 100%.
+   - Cada fallo incrementa el calor en un 20%.
+   - Al superar el 60% de calor, el material de la papa se ilumina de color rojo y emite efectos de humo.
+4. **Condicion de Victoria y Explosion:**
+   - Cuando el medidor de calor alcanza el 100% en el lado de un jugador, la papa estalla (Explode()), terminando la ronda y otorgando el punto al rival.
+   - El juego se disputa por defecto al mejor de 3 rondas (primer jugador en ganar 2 rondas).
+
+---
+
+## 8. Sistema de Rachas y Poderes Especiales
+
+Mantener el ritmo con precision recompensa al jugador con herramientas de sabotaje e interaccion directa:
+
+### Reglas de los Poderes:
+- **Umbral de Obtencion:** Se desbloquea 1 poder al acumular **5 aciertos consecutivos** (racha de 5).
+- **Activacion:** El jugador presiona su tecla de poder (Enter para P1, Espacio para P2) en cualquier instante.
+- **Capacidad:** Maximo 1 poder almacenado por jugador a la vez para mantener el equilibrio competitivo.
+
+### Catalogo de Poderes:
+
+#### 1. Papa Cohete (Aceleracion de Notas) - Prioridad 1
+- **Efecto:** Durante 4 compases, las notas del carril del oponente descienden a mayor velocidad (tiempo de reaccion reducido a la mitad).
+- **Lectura/Contrajuego:** Suena una alerta y los bordes del tablero rival se iluminan. El patron ritmico sigue siendo el mismo, pero exige reflejos mas rapidos.
+
+#### 2. Papa Fantasma (Notas Invisibles) - Prioridad 1
+- **Efecto:** Durante 3 segundos, las notas en los carriles del oponente desaparecen en el tramo medio del recorrido y reaparecen justo antes de la HitZone.
+- **Lectura/Contrajuego:** El oponente debe confiar en su oido musical y en la memoria del compas para mantener la precision.
+
+#### 3. Papa Electrica (Ventana Estrecha) - Prioridad 2
+- **Efecto:** Durante 4 notas, la ventana de acierto del rival se reduce temporalmente, requiriendo precision milimetrica para evitar fallos.
+- **Lectura/Contrajuego:** Indicador visual electrico en la HitZone del rival.
+
+#### 4. Papa Helada (Escudo Defensivo) - Prioridad 2
+- **Efecto:** Enfria el calor de la papa en un 40% y anula la penalizacion del siguiente fallo (no rompe la racha).
+
+---
+
+## 9. Arquitectura de Software en Unity
+
+El codigo se organiza en modulos independientes comunicados a traves del sistema de eventos GameEvents.cs:
 
 ```
-JUGADOR 1                 PAPA VÓLEY                 JUGADOR 2
-Racha: 7               RONDA 2 · 01:12               Racha: 4
-
-                 ¡LA PAPA ESTÁ ARDIENDO!
-                 Siguiente golpe: RÁPIDO
-
-                      CALOR 72%
-
-     ESPACIO: Golpear          SHIFT: Usar poder
+Party Potato/Assets/Scripts/
+├── Core/
+│   ├── GameEvents.cs          # Eventos globales (OnHit, OnMiss, OnPowerTriggered, OnRoundEnd)
+│   ├── GameEnums.cs           # Enums: HitRating, LaneDirection, GameMode, PowerType
+│   ├── GameConfig.cs          # ScriptableObject con parametros de balance y tolerancias
+│   └── MatchManager.cs        # Control de partidas (1P vs CPU o 2P Local), rondas y ganador
+├── Rhythm/
+│   ├── RhythmManager.cs       # Reloj dspTime, calculo de songPositionInBeats y tempo BPM
+│   ├── NoteSpawner.cs         # Generacion de notas en 4 carriles (Left, Down, Up, Right) para ambos lados
+│   ├── NoteObject.cs          # Movimiento lerp de notas por beats y auto-miss al sobrepasar HitZone
+│   └── PlayerInput.cs         # Lectura de teclas P1 (Flechas) y P2 (WASD) vinculadas a carriles
+├── Gameplay/
+│   ├── BombController.cs      # Movimiento de la papa, material de calentamiento y detonacion
+│   ├── PotatoHeatSystem.cs    # Acumulacion de calor (0-100%) y gestion de dano
+│   ├── ComboSystem.cs         # Conteo de rachas por jugador y carga de poderes
+│   ├── PowerUpManager.cs      # Ejecucion de efectos de sabotaje en carriles
+│   └── AIController.cs        # Controlador de la maquina para modo Solo (precision segun dificultad)
+├── UI/
+│   ├── GameUI.cs              # Marcadores de racha, medidor de calor y avisos de estado
+│   ├── HitFeedbackUI.cs       # Textos flotantes (PERFECT, GREAT, GOOD, MISS)
+│   └── VictoryScreen.cs       # Pantalla de victoria con opciones de revancha y menu
+└── Audio/
+    └── SfxPlayer.cs           # Reproduccion de sonidos de impacto, fallo, alerta y explosion
 ```
 
-*Ejemplo conceptual de distribución de la interfaz.*
+---
 
-### Elementos imprescindibles
+## 10. Interfaz de Usuario y Presentacion Visual
 
-- La papa y la zona de impacto.
-- Indicador del jugador activo.
-- Medidor de racha y de poder.
-- Medidor de calor.
-- Avisos de eventos y poderes.
-- Resultado del golpe: perfecto, bien o fallo.
-- Pantalla de victoria con opción de revancha.
+```
+========================================================================
+                        BEAT POTATO: DUELO RITMICO
+========================================================================
+[ P1: JUGADOR 1 (FLECHAS) ]                  [ P2: JUGADOR 2 / CPU (WASD) ]
+  RACHA: 12  |  PODER: [LISTO]                RACHA: 3   |  PODER: [     ]
+  
+      [<] [v] [^] [>]                             [A] [S] [W] [D]
+       |   |   |   |                               |   |   |   |
+       |   |   v   |                               |   v   |   |
+       |   v       |             [PAPA]            |       |   v
+       |           |          CALOR: 35%           |       |   |
+      (=) (=) (=) (=)       << EN JUEGO >>        (=) (=) (=) (=)  <-- HitZones
+       [ PERFECT! ]                                  [ GOOD! ]
+========================================================================
+```
 
-### Controles
-
-Si van a jugar en un mismo teclado, asignar una tecla de golpe a cada jugador, por ejemplo `F` para el jugador 1 y `J` para el jugador 2. La tecla para usar poderes también debe ser diferente para cada uno.
-
-Esto es importante porque si ambos comparten una sola tecla, la competición pierde sentido: uno podría activar accidentalmente la acción del otro.
+- **Retroalimentacion Instantanea:** Cada impacto muestra un texto flotante con la calificacion del golpe y chispas visuales en el carril.
+- **Visualizacion de la Papa:** El material de la papa cambia dinamicamente de color amarillo tostado a rojo intenso a medida que se calienta, acompanado de particulas de humo y temblores antes de detonar.
 
 ---
 
-## 9. Cómo organizar el código en Unity
+## 11. Plan de Desarrollo y Alcance para Game Jam (24 Horas)
 
-Para que el proyecto no termine convertido en un único script inmanejable, dividirlo en componentes pequeños.
+### Fase 1: Nucleo Ritmico y Duelo (Horas 0 a 10) - Esencial
+- Sincronizacion de audio con AudioSettings.dspTime en RhythmManager.cs.
+- Spawner de 4 carriles (NoteSpawner.cs) y notas funcionales (NoteObject.cs).
+- Movimiento e interpolacion de la papa en BombController.cs.
+- Mapeo de controles diferenciados: P1 (Flechas) y P2 (WASD) en PlayerInput.cs.
+- Evaluacion de calificaciones de tiempo: Miss, Good, Great, Perfect.
+- Traspaso de la papa por aciertos/fallos y fin de ronda por calor critico.
+- IA basica para la maquina (AIController.cs) que permite jugar en solitario.
 
-| Script                | Responsabilidad                                               |
-| --------------------- | ------------------------------------------------------------- |
-| `RhythmManager.cs`    | Tempo, pulsos musicales, tiempos programados y patrones.      |
-| `PotatoController.cs` | Movimiento de la papa y llegada a la zona de impacto.         |
-| `HitDetection.cs`     | Detectar la pulsación, calcular precisión y registrar fallos. |
-| `ComboSystem.cs`      | Rachas, multiplicadores y cargas de poder.                    |
-| `PowerUpManager.cs`   | Activación, duración y efectos de poderes.                    |
-| `PotatoHeatSystem.cs` | Nivel de calor, apariencia y escalada de tensión.             |
-| `MatchManager.cs`     | Estado de partida, turnos de golpe, vidas y victoria.         |
-| `GameUI.cs`           | Marcadores, medidores, notificaciones y pantalla final.       |
+### Fase 2: Identidad y Sabotaje (Horas 10 a 18) - Prioridad Media
+- Retroalimentacion visual de calificaciones en pantalla (HitFeedbackUI.cs).
+- Sistema de rachas y dos poderes iniciales: Papa Cohete y Papa Fantasma.
+- Selector de modo en interfaz principal (2 Jugadores Local / 1 Jugador vs CPU).
+- Particulas de acierto y animacion de explosion al fallar.
 
-No hace falta construir todos estos sistemas como una arquitectura compleja. Pueden ser componentes sencillos que se comuniquen mediante métodos y eventos de C#.
-
-### La lógica del golpe
-
-1. `RhythmManager` programa cuándo debe llegar la papa.
-2. `PotatoController` anima su recorrido hasta la zona de golpeo.
-3. `HitDetection` compara el tiempo real de la pulsación con el tiempo objetivo.
-4. `ComboSystem` actualiza la racha.
-5. `PowerUpManager` aplica la habilidad seleccionada.
-6. `MatchManager` determina quién debe jugar a continuación o si alguien ha perdido.
-
-Para evitar errores, **cada llegada debe resolverse una sola vez**. Si el jugador pulsa dos veces, el juego no debe registrar dos golpes para una misma papa.
-
-También conviene **separar el movimiento visual de la lógica temporal**: la posición de la papa sirve para mostrar lo que sucede, pero el acierto se calcula con los tiempos programados. Así se evita que pequeños retrasos de los fotogramas alteren injustamente el resultado.
-
----
-
-## 10. El alcance realista para 24 horas
-
-No empezar implementando cinco poderes, cuatro eventos y tres fases. Primero hay que demostrar que el golpe musical es divertido.
-
-### Esencial — Primera versión jugable
-
-- Dos jugadores locales.
-- Una canción y una línea musical.
-- Una zona de golpeo con detección de precisión.
-- Rachas y condición de derrota.
-- Papa que viaja de un jugador al otro.
-- Una pantalla final con revancha.
-
-### Prioridad 2 — Lo que le da personalidad
-
-- Dos poderes: Papa Cohete y Papa Dorada.
-- Tres patrones musicales.
-- Animación de calentamiento y explosión.
-- Sonidos de acierto y fallo.
-
-### Si sobra — Pulido y contenido extra
-
-- Un tercer poder.
-- Dos eventos especiales.
-- Animaciones adicionales y efectos de cámara.
-- Segunda canción o selección de dificultad.
-
-### Distribución sugerida del tiempo
-
-| Tiempo  | Objetivo                                              |
-| ------- | ----------------------------------------------------- |
-| 0–3 h   | Proyecto Unity, controles y sincronización básica.    |
-| 3–7 h   | Línea musical, movimiento y detección de golpes.      |
-| 7–10 h  | Dos jugadores y condición de victoria.                |
-| 10–14 h | Rachas, medidores y dos poderes.                      |
-| 14–18 h | Patrones musicales y escalada de dificultad.          |
-| 18–21 h | Sonido, animaciones, interfaz y feedback visual.      |
-| 21–24 h | Pruebas, equilibrio, correcciones y ejecutable final. |
-
-Este cronograma supone que los integrantes pueden trabajar en paralelo y que ya tienen una canción adecuada o pueden crear una pista sencilla. Si están aprendiendo Unity desde cero, reducir el alcance a **una canción, un poder y un modo de juego completo**.
-
----
-
-## 11. Las tres pruebas antes de darlo por terminado
-
-No basta con que el juego funcione técnicamente. Hay que comprobar que sea divertido.
-
-1. **¿Se entiende sin explicación?** Poner a dos personas a jugar sin explicarles las reglas. Si no entienden cuándo golpear o por qué fallaron, la interfaz necesita mejorar.
-2. **¿Se siente justo?** Comprobar que un jugador no pierda constantemente por retrasos de audio, patrones imposibles o poderes que no dejan responder. Un error debe sentirse como un error del jugador, no del juego.
-3. **¿Piden una revancha?** Esta es la prueba más importante. Si después de una partida los dos jugadores quieren volver a intentarlo, están construyendo algo interesante. Si se aburren después de una sola ronda, necesitan más variedad en los patrones, los poderes o las decisiones.
-
----
-
-## Propuesta definitiva
-
-Construir Papa Vóley como un duelo musical de dos jugadores, con una sola línea de golpeo, una papa que viaja siguiendo el tempo, rachas que desbloquean poderes y una dificultad que escala a lo largo de la partida.
-
-La identidad no debe depender de tener muchísimas mecánicas, sino de combinar bien estas cinco:
-
-1. Ritmo musical preciso.
-2. Una papa visualmente expresiva.
-3. Rachas que recompensan la habilidad.
-4. Poderes que generan interacción entre rivales.
-5. Una escalada de tensión que culmina en un fallo divertido.
-
-Y una decisión desde el principio: **no hacer que la velocidad aumente indefinidamente sin control**. Definir un límite de dificultad y variar los patrones, porque la sorpresa y la anticipación son más divertidas que simplemente pulsar cada vez más rápido.
-
-Con eso hay una base concreta para desarrollar, probar y presentar un minijuego completo en 24 horas, sin depender de físicas complejas ni de contenido que no alcance a terminarse.
+### Fase 3: Pulido y Entrega (Horas 18 a 24) - Finalizacion
+- Efectos de sonido (SFX de acierto, fallo, sirena y detonacion).
+- Pantalla de victoria con conteo de rondas ganadas y opcion de revancha inmediata.
+- Calibracion de latencia de entrada y balanceo de dificultades de la CPU.
+- Generacion de ejecutable y verificacion final.
