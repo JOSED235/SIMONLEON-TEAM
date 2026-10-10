@@ -19,22 +19,22 @@
 
 ## 2026-10-09 - Arquitectura Core: GameEnums y GameEvents
 
-- Participante: Jose David Rodríguez Pinilla
-- Tarea: Creación de enumeraciones base (`GameEnums.cs`) y bus de eventos estático desacoplado (`GameEvents.cs`) en `Party Potato/Assets/Scripts/Core/`.
+- Participante: Jose David RodrÃ­guez Pinilla
+- Tarea: CreaciÃ³n de enumeraciones base (`GameEnums.cs`) y bus de eventos estÃ¡tico desacoplado (`GameEvents.cs`) en `Party Potato/Assets/Scripts/Core/`.
 - Archivos creados:
   - `Party Potato/Assets/Scripts/Core/GameEnums.cs`
   - `Party Potato/Assets/Scripts/Core/GameEvents.cs`
-- Resumen: Se definieron los enums para jugadores (`PlayerID`), resultados de impacto (`HitResult`: Miss, Good, Perfect), poderes (`PowerType`), ciclo de partida (`MatchState`) y estados de la papa (`PotatoState`). Se implementó el bus de eventos desacoplado con disparadores estáticos y método `ResetAllEvents` para cubrir ritmo, trayectorias de la papa, aciertos, rachas, poderes, calor y control de rondas.
-- Limitaciones: Los eventos están declarados y listos para invocarse; falta conectar emisores (`RhythmManager`, `PotatoController`) y receptores (`HitDetection`, `ComboSystem`, `MatchManager`, `GameUI`).
+- Resumen: Se definieron los enums para jugadores (`PlayerID`), resultados de impacto (`HitResult`: Miss, Good, Perfect), poderes (`PowerType`), ciclo de partida (`MatchState`) y estados de la papa (`PotatoState`). Se implementÃ³ el bus de eventos desacoplado con disparadores estÃ¡ticos y mÃ©todo `ResetAllEvents` para cubrir ritmo, trayectorias de la papa, aciertos, rachas, poderes, calor y control de rondas.
+- Limitaciones: Los eventos estÃ¡n declarados y listos para invocarse; falta conectar emisores (`RhythmManager`, `PotatoController`) y receptores (`HitDetection`, `ComboSystem`, `MatchManager`, `GameUI`).
 
 ## 2026-10-09 - Pruebas automatizadas para Core
 
 - Participante: Jose David Rodriguez
 - Tarea: Crear pruebas para `GameEnums`, `GameEvents`, `GameConfig` y `MatchManager`.
 - Archivos creados: `Tests/Core/GameEnumsTests.cs`, `Tests/Core/GameEventsTests.cs`, `Tests/Core/MatchManagerTests.cs`, `Tests/Core/UnityEngineStubs.cs` y `Tests/run-core-tests.ps1`.
-- Resumen: Se probaron los valores de los enums, los 17 disparadores de eventos y sus parámetros, limpieza de suscripciones, valores predeterminados de configuración y los estados, turnos, puntajes, victoria, reinicio y suscripciones de `MatchManager`.
-- Pruebas: `Tests/run-core-tests.ps1` compiló los scripts Core reales y ejecutó 34 pruebas; todas pasaron.
-- Limitaciones: `Party Potato/` no contiene `Packages/` ni `ProjectSettings/`. `MatchManager` se probó con dobles mínimos de `UnityEngine`, no en el Editor/Test Runner; falta validar la integración y temporización real en Unity.
+- Resumen: Se probaron los valores de los enums, los 17 disparadores de eventos y sus parÃ¡metros, limpieza de suscripciones, valores predeterminados de configuraciÃ³n y los estados, turnos, puntajes, victoria, reinicio y suscripciones de `MatchManager`.
+- Pruebas: `Tests/run-core-tests.ps1` compilÃ³ los scripts Core reales y ejecutÃ³ 34 pruebas; todas pasaron.
+- Limitaciones: `Party Potato/` no contiene `Packages/` ni `ProjectSettings/`. `MatchManager` se probÃ³ con dobles mÃ­nimos de `UnityEngine`, no en el Editor/Test Runner; falta validar la integraciÃ³n y temporizaciÃ³n real en Unity.
 
 ## 2026-10-10 - Actualizacion Integral de Documentacion a Beat Potato (Papa Beat)
 
@@ -78,7 +78,7 @@
 - Pruebas realizadas: Ejecucion automatizada de `Tests/run-core-tests.ps1` compilando la suite completa; las 35 pruebas unitarias pasaron satisfactoriamente.
 - Limitaciones: Falta conectar la emision real de calor desde `PotatoHeatSystem.cs` y el mapeo de teclas en `PlayerInput.cs`.
 
-## 2026-10-10 - Implementaci�n de PotatoHeatSystem
+## 2026-10-10 - Implementación de PotatoHeatSystem
 - Participante: Jose David Rodriguez Pinilla
 - Tarea: Creacion de `PotatoHeatSystem.cs` para gestionar el nivel de calor y la detonacion de la papa.
 - Archivos creados:
@@ -97,3 +97,21 @@
 - Tarea: Revertir el proyecto al commit 16c4842 (estado antes de la reorganización y PotatoHeatSystem).
 - Archivos modificados: Todo el proyecto (Rollback), excluyendo AI_TRACE.md para preservar la integridad del registro.
 - Resumen: El usuario decidió descartar los cambios arquitectónicos recientes para abordar la configuración del Jugador 2 desde un estado estable previo.
+## 2026-10-10 - Mantener contrato de Core (Eventos y Documentacion)
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Alinear GameEnums, GameConfig y GameEvents con el GDD y documentar emisores/consumidores de cada evento.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Core/GameEvents.cs`
+- Resumen: Se reviso la alineacion de la configuracion de Core respecto al GDD vigente. Se actualizo la documentacion XML de todos los disparadores en `GameEvents.cs` para hacer explicito quien emite el evento y que modulos lo consumen, previniendo acoplamiento oculto y duplicidad en el calculo de tiempos. Se mantuvo la validacion con 35 pruebas unitarias exitosas.
+- Limitaciones: La actualizacion fue estrictamente a nivel de documentacion y firmas; la integracion en Unity depende de cada consumidor.
+
+## 2026-10-10 - Completar MatchManager (event-driven countdown + ciclo completo de rondas)
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Verificar y cerrar la implementacion de `MatchManager.cs`; alinear los tests con el nuevo modelo event-driven.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Core/MatchManager.cs` (confirmado: logica de countdown basada en `HandleBeat` + `OnBeat`, no en corrutinas)
+  - `Tests/Core/MatchManagerTests.cs` (actualizado `TestCountdownTransition` para usar `GameEvents.TriggerBeat()` en lugar de manipular la corrutina `roundTransitionCoroutine`)
+  - `Docs/Division de responsabilidades - Backend.md` (marcado "Completar MatchManager.cs" como COMPLETADO)
+- Resumen: El `MatchManager` ya contenia la implementacion correcta del ciclo de partida (Countdown -> Playing -> RoundOver -> GameOver). El countdown usa `HandleBeat` suscrito a `GameEvents.OnBeat`, respeta `config.countdownBeats`, ignora explosiones fuera del estado Playing, otorga puntos al contrario del perdedor, y reinicia todo el estado en `HandleMatchReset`. El test estaba desalineado con la nueva arquitectura event-driven; se actualizo para simular beats con `TriggerBeat()`. Resultado: 35/35 pruebas unitarias pasando.
+- Limitaciones: La corrutina `WaitAndStartNextRoundRoutine` usa `WaitForSeconds` (Unity time), que no es ejecutable en los tests de consola; el delay entre rondas no se verifica en los tests actuales (es funcionalidad de integracion en Unity).
+
