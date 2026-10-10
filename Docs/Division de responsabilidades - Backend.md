@@ -81,10 +81,10 @@ Responsable principal de convertir los resultados ritmicos en el ciclo de riesgo
    - Respetar la cuenta regresiva, el objetivo de rondas y los retrasos configurados.
    - Ignorar resoluciones duplicadas o eventos recibidos fuera del estado valido.
    - Reiniciar puntajes y estado al pedir revancha.
-3. **Crear `PotatoHeatSystem.cs` e integrar la papa.**
-   - Acumular el calor por jugador segun los fallos y valores de `GameConfig`; informar cambios normalizados para UI/audio.
-   - Restablecer o reducir calor de acuerdo con las reglas acordadas para los golpes y poderes.
-   - Emitir `OnPotatoExploded` una sola vez al alcanzar el umbral; `MatchManager` usa ese evento para resolver la ronda.
+3. **Crear `PotatoHeatSystem.cs` e integrar la papa. (COMPLETADO)**
+   - Acumular el calor por jugador segun los fallos y valores de `GameConfig`; informar cambios normalizados para UI/audio. (COMPLETADO)
+   - Restablecer o reducir calor de acuerdo con las reglas acordadas para los golpes y poderes. (COMPLETADO)
+   - Emitir `OnPotatoExploded` una sola vez al alcanzar el umbral; `MatchManager` usa ese evento para resolver la ronda. (COMPLETADO)
    - Coordinar con Felipe el uso de `OnPotatoPositionUpdated`/`OnPotatoLaunched` para que la papa visual represente el resultado del intercambio, sin usar su posicion para decidir si un golpe acerto.
 4. **Crear `ComboSystem.cs`.**
    - Llevar una racha independiente por jugador segun la calificacion recibida.
