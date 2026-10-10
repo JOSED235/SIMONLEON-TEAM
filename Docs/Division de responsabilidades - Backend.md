@@ -72,10 +72,10 @@ Responsable principal del recorrido de una nota desde su planificacion hasta la 
 
 Responsable principal de convertir los resultados ritmicos en el ciclo de riesgo, rondas y poderes.
 
-1. **Mantener el contrato de Core.**
-   - Alinear `GameEnums.cs`, `GameEvents.cs` y `GameConfig.cs` con el GDD vigente.
-   - Documentar el significado y los consumidores de cada evento antes de anadir o cambiar una firma.
-   - Evitar duplicar en Core la evaluacion temporal que pertenece al flujo de ritmo/entrada.
+1. **Mantener el contrato de Core. (COMPLETADO)**
+   - Alinear `GameEnums.cs`, `GameEvents.cs` y `GameConfig.cs` con el GDD vigente. (COMPLETADO)
+   - Documentar el significado y los consumidores de cada evento antes de anadir o cambiar una firma. (COMPLETADO)
+   - Evitar duplicar en Core la evaluacion temporal que pertenece al flujo de ritmo/entrada. (COMPLETADO)
 2. **Completar `MatchManager.cs`.**
    - Iniciar y finalizar rondas usando los eventos del bus; otorgar el punto al contrario del jugador que recibe la explosion.
    - Respetar la cuenta regresiva, el objetivo de rondas y los retrasos configurados.

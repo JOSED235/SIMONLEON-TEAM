@@ -92,3 +92,10 @@
 - Tarea: Resolver conflictos de merge entre la rama actual y develop.
 - Archivos modificados: AI_TRACE.md
 - Resumen: Se integraron las viñetas del pivot de minijuego (HEAD) con los registros de arquitectura y pruebas (develop), manteniendo ambos.
+## 2026-10-10 - Mantener contrato de Core (Eventos y Documentacion)
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Alinear GameEnums, GameConfig y GameEvents con el GDD y documentar emisores/consumidores de cada evento.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Core/GameEvents.cs`
+- Resumen: Se reviso la alineacion de la configuracion de Core respecto al GDD vigente. Se actualizo la documentacion XML de todos los disparadores en `GameEvents.cs` para hacer explicito quien emite el evento y que modulos lo consumen, previniendo acoplamiento oculto y duplicidad en el calculo de tiempos. Se mantuvo la validacion con 35 pruebas unitarias exitosas.
+- Limitaciones: La actualizacion fue estrictamente a nivel de documentacion y firmas; la integracion en Unity depende de cada consumidor.
