@@ -280,12 +280,68 @@ public class RhythmManager : MonoBehaviour
     #region Evaluacion de Precision Ritmica
 
     /// <summary>
+    /// Devuelve el puntaje correspondiente a una calificacion segun el GDD de Beat Potato:
+    /// Perfect: +100 pts, Great: +50 pts, Good: +25 pts, Miss: 0 pts.
+    /// </summary>
+    public static int GetHitScore(HitResult result)
+    {
+        switch (result)
+        {
+            case HitResult.Perfect: return 100;
+            case HitResult.Great:   return 50;
+            case HitResult.Good:    return 25;
+            default:                return 0;
+        }
+    }
+
+    /// <summary>
+    /// Clasifica una diferencia temporal absoluta en segundos contra las tolerancias de GameConfig.
+    /// Devuelve la calificacion de impacto y calcula la precision normalizada mapeada a los rangos oficiales del GDD:
+    /// - Perfect (<=50 ms): Precision >= 90% (0.90 a 1.00)
+    /// - Great   (<=100 ms): Precision 70% a 89% (0.70 a 0.89)
+    /// - Good    (<=150 ms): Precision 50% a 69% (0.50 a 0.69)
+    /// - Miss    (>150 ms):  Precision 0% (0.00)
+    /// </summary>
+    public HitResult ClassifyTimeDifference(float timeDifference, out float accuracyNormalized, bool isElectric = false)
+    {
+        float perfTol = (isElectric && gameConfig != null) ? gameConfig.electricPerfectTolerance : (gameConfig != null ? gameConfig.perfectTolerance : 0.05f);
+        float greatTol = (gameConfig != null) ? gameConfig.greatTolerance : 0.10f;
+        float goodTol  = (gameConfig != null) ? gameConfig.goodTolerance  : 0.15f;
+
+        if (timeDifference <= perfTol)
+        {
+            float ratio = (perfTol > 0f) ? Mathf.Clamp01(1f - (timeDifference / perfTol)) : 1f;
+            accuracyNormalized = Mathf.Lerp(0.90f, 1.00f, ratio);
+            return HitResult.Perfect;
+        }
+
+        if (timeDifference <= greatTol)
+        {
+            float range = greatTol - perfTol;
+            float ratio = (range > 0f) ? Mathf.Clamp01(1f - ((timeDifference - perfTol) / range)) : 1f;
+            accuracyNormalized = Mathf.Lerp(0.70f, 0.89f, ratio);
+            return HitResult.Great;
+        }
+
+        if (timeDifference <= goodTol)
+        {
+            float range = goodTol - greatTol;
+            float ratio = (range > 0f) ? Mathf.Clamp01(1f - ((timeDifference - greatTol) / range)) : 1f;
+            accuracyNormalized = Mathf.Lerp(0.50f, 0.69f, ratio);
+            return HitResult.Good;
+        }
+
+        accuracyNormalized = 0f;
+        return HitResult.Miss;
+    }
+
+    /// <summary>
     /// Evalua la precision temporal de un impacto contra el beat objetivo de una nota especifica.
-    /// Determina la calificacion (Perfect, Great, Good o Miss) y la precision normalizada (0.0 a 1.0).
+    /// Determina la calificacion (Perfect, Great, Good o Miss) y la precision normalizada segun el GDD.
     /// </summary>
     /// <param name="targetBeat">Beat exacto en el que debia ser golpeada la nota.</param>
     /// <param name="timeDifference">Diferencia temporal absoluta en segundos respecto al instante ideal.</param>
-    /// <param name="accuracyNormalized">Precision porcentual (1.0 = centro exacto, 0.0 = borde de Good o Miss).</param>
+    /// <param name="accuracyNormalized">Precision porcentual (0.0 a 1.0) mapeada segun los rangos del GDD.</param>
     /// <param name="isElectric">Indica si aplica la ventana reducida por el sabotaje Papa Electrica.</param>
     /// <returns>Resultado del impacto segun las ventanas de GameConfig.</returns>
     public HitResult EvaluateHit(float targetBeat, out float timeDifference, out float accuracyNormalized, bool isElectric = false)
@@ -293,31 +349,34 @@ public class RhythmManager : MonoBehaviour
         // Calculo de desfase temporal contra el tiempo objetivo de la nota
         float beatDiff = Mathf.Abs(songPositionInBeatsField - targetBeat);
         timeDifference = beatDiff * secPerBeatField;
+        return ClassifyTimeDifference(timeDifference, out accuracyNormalized, isElectric);
+    }
 
-        float perfTol = (isElectric && gameConfig != null) ? gameConfig.electricPerfectTolerance : (gameConfig != null ? gameConfig.perfectTolerance : 0.05f);
-        float greatTol = gameConfig != null ? gameConfig.greatTolerance : 0.10f;
-        float goodTol = gameConfig != null ? gameConfig.goodTolerance : 0.15f;
+    /// <summary>
+    /// Evalua la precision temporal y empaqueta el resultado completo (calificacion, desfase, precision y puntaje).
+    /// </summary>
+    public NoteEvaluationResult EvaluateHitFull(float targetBeat, bool isElectric = false)
+    {
+        float timeDiff;
+        float accuracy;
+        HitResult result = EvaluateHit(targetBeat, out timeDiff, out accuracy, isElectric);
+        int score = GetHitScore(result);
+        return new NoteEvaluationResult(result, timeDiff, accuracy, score);
+    }
 
-        if (timeDifference <= perfTol)
+    /// <summary>
+    /// Evalua la precision temporal contra un NoteObject especifico.
+    /// </summary>
+    public HitResult EvaluateNote(NoteObject note, out float timeDifference, out float accuracyNormalized, bool isElectric = false)
+    {
+        if (note == null)
         {
-            accuracyNormalized = Mathf.Clamp01(1f - (timeDifference / perfTol));
-            return HitResult.Perfect;
+            timeDifference = float.MaxValue;
+            accuracyNormalized = 0f;
+            return HitResult.Miss;
         }
 
-        if (timeDifference <= greatTol)
-        {
-            accuracyNormalized = Mathf.Clamp01(1f - (timeDifference / greatTol));
-            return HitResult.Great;
-        }
-
-        if (timeDifference <= goodTol)
-        {
-            accuracyNormalized = Mathf.Clamp01(1f - (timeDifference / goodTol));
-            return HitResult.Good;
-        }
-
-        accuracyNormalized = 0f;
-        return HitResult.Miss;
+        return EvaluateHit(note.beatOfThisNote, out timeDifference, out accuracyNormalized, isElectric);
     }
 
     /// <summary>
@@ -341,4 +400,27 @@ public class RhythmManager : MonoBehaviour
     }
 
     #endregion
+}
+
+/// <summary>
+/// Contiene el resultado integral de la evaluacion de una nota segun las reglas del GDD:
+/// calificacion (HitResult), desfase temporal en segundos, precision normalizada (0.0 a 1.0) y puntaje.
+/// </summary>
+[System.Serializable]
+public struct NoteEvaluationResult
+{
+    public HitResult result;
+    public float timeDifference;
+    public float accuracyNormalized;
+    public int score;
+    public bool isHit;
+
+    public NoteEvaluationResult(HitResult result, float timeDifference, float accuracyNormalized, int score)
+    {
+        this.result = result;
+        this.timeDifference = timeDifference;
+        this.accuracyNormalized = accuracyNormalized;
+        this.score = score;
+        this.isHit = (result != HitResult.Miss);
+    }
 }

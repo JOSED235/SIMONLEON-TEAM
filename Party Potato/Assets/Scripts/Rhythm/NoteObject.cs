@@ -136,12 +136,20 @@ public class NoteObject : MonoBehaviour
     /// <summary>
     /// Resuelve la nota como un golpe acertado.
     /// Solo produce efecto la primera vez; llamadas posteriores se ignoran (isResolved).
+    /// Si por error se envia HitResult.Miss, se redirige a ResolveMiss para preservar la coherencia de eventos.
     /// </summary>
-    /// <param name="result">Calificacion del golpe (Perfect, Great, Good). Miss no debe usarse aqui.</param>
+    /// <param name="result">Calificacion del golpe (Perfect, Great, Good). Miss se redirige a ResolveMiss.</param>
     /// <param name="accuracy">Precision normalizada 0..1 calculada por RhythmManager.EvaluateHit.</param>
     public void ResolveHit(HitResult result, float accuracy)
     {
         if (isResolvedField) return;
+
+        if (result == HitResult.Miss)
+        {
+            ResolveMiss();
+            return;
+        }
+
         isResolvedField = true;
 
         GameEvents.TriggerNoteHit(targetPlayer, laneID, result, accuracy);
@@ -151,7 +159,7 @@ public class NoteObject : MonoBehaviour
     }
 
     /// <summary>
-    /// Resuelve la nota como un fallo automatico por haber rebasado la HitZone.
+    /// Resuelve la nota como un fallo automatico por haber rebasado la HitZone o pulsacion a destiempo.
     /// Solo produce efecto la primera vez; llamadas posteriores se ignoran (isResolved).
     /// </summary>
     public void ResolveMiss()
@@ -163,10 +171,37 @@ public class NoteObject : MonoBehaviour
         GameEvents.TriggerPlayerMiss(targetPlayer);
         GameEvents.TriggerHitResolved(targetPlayer, HitResult.Miss, 0f);
 
-        Debug.Log(string.Format("[NoteObject] Miss automatico: {0} carril {1} (Beat objetivo: {2:F2}).",
+        Debug.Log(string.Format("[NoteObject] Miss registrado: {0} carril {1} (Beat objetivo: {2:F2}).",
                                 targetPlayer, laneID, beatOfThisNote));
 
         Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// Evalua y resuelve esta nota contra el tiempo musical actual del RhythmManager.
+    /// Determina la calificacion exacta segun el GDD, despacha los eventos en GameEvents
+    /// y consume la nota. Permite que tanto PlayerInput como AIController utilicen el mismo flujo.
+    /// </summary>
+    /// <param name="isElectric">Indica si aplica la reduccion de ventana por Papa Electrica.</param>
+    /// <returns>Resultado de la evaluacion (Perfect, Great, Good o Miss).</returns>
+    public HitResult EvaluateAndResolve(bool isElectric = false)
+    {
+        if (isResolvedField || RhythmManager.Instance == null) return HitResult.Miss;
+
+        float timeDiff;
+        float accuracy;
+        HitResult result = RhythmManager.Instance.EvaluateHit(beatOfThisNote, out timeDiff, out accuracy, isElectric);
+
+        if (result != HitResult.Miss)
+        {
+            ResolveHit(result, accuracy);
+        }
+        else
+        {
+            ResolveMiss();
+        }
+
+        return result;
     }
 
     // -----------------------------------------------------------------------

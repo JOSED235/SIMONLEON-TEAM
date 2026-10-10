@@ -447,6 +447,242 @@ public static class NoteAndInputTests
         Console.WriteLine("[PASS] PlayerInput: Los cuatro carriles de P2 son independientes");
     }
 
+    /// <summary>
+    /// Verifica que un acierto valido despacha OnNoteHit y OnHitResolved con la precision y calificacion correctas,
+    /// y NUNCA dispara eventos de fallo (OnNoteMiss ni OnPlayerMiss).
+    /// </summary>
+    public static void TestNoteEvaluationEventDispatchOnHit()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f); // 0.5s por beat
+
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        typeof(RhythmManager).GetField("songPositionField", flags).SetValue(RhythmManager.Instance, 2.0f);
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 4.0f);
+
+        // Nota en carril 2 (Up) a 0.01s (Beat 4.02) -> Perfect (precision >= 90%)
+        NoteObject note = new NoteObject();
+        note.targetPlayer = PlayerID.Player1;
+        note.laneID = 2;
+        note.laneDirection = LaneDirection.Up;
+        note.beatOfThisNote = 4.02f;
+        NoteObject.ActiveNotes.Add(note);
+
+        PlayerInput input = new PlayerInput();
+        input.penalizeGhostTaps = true;
+
+        PlayerID hitPlayer = PlayerID.None;
+        int hitLane = -1;
+        HitResult hitResult = HitResult.Miss;
+        float hitAccuracy = 0f;
+        int noteHitCount = 0;
+        int hitResolvedCount = 0;
+        int missCount = 0;
+
+        GameEvents.OnNoteHit += delegate(PlayerID p, int l, HitResult r, float acc)
+        {
+            hitPlayer = p;
+            hitLane = l;
+            hitResult = r;
+            hitAccuracy = acc;
+            noteHitCount++;
+        };
+
+        GameEvents.OnHitResolved += delegate(PlayerID p, HitResult r, float acc)
+        {
+            hitResolvedCount++;
+        };
+
+        GameEvents.OnNoteMiss += delegate { missCount++; };
+        GameEvents.OnPlayerMiss += delegate { missCount++; };
+
+        HitResult returnedResult = input.HandleLanePress(PlayerID.Player1, 2);
+
+        Assert(returnedResult == HitResult.Perfect, "HandleLanePress debe retornar Perfect");
+        Assert(noteHitCount == 1, "Debe dispararse exactamente un OnNoteHit");
+        Assert(hitResolvedCount == 1, "Debe dispararse exactamente un OnHitResolved");
+        Assert(hitPlayer == PlayerID.Player1, "El jugador del impacto debe ser Player1");
+        Assert(hitLane == 2, "El carril del impacto debe ser 2 (Up)");
+        Assert(hitResult == HitResult.Perfect, "El resultado debe ser Perfect");
+        Assert(hitAccuracy >= 0.90f, "La precision de Perfect debe ser >= 90% segun GDD");
+        Assert(missCount == 0, "No debe dispararse ningun evento de fallo en un impacto exitoso");
+
+        NoteObject.ActiveNotes.Clear();
+        Console.WriteLine("[PASS] NoteEvaluation: Despacho de eventos de acierto (OnNoteHit y OnHitResolved)");
+    }
+
+    /// <summary>
+    /// Verifica que una nota en ventana de busqueda pero con desfase fuera de Good tolerance (>0.15s)
+    /// se consume como Miss forzado, disparando OnNoteMiss, OnPlayerMiss y OnHitResolved(Miss),
+    /// y NUNCA dispara OnNoteHit.
+    /// </summary>
+    public static void TestNoteEvaluationEventDispatchOnForcedMiss()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f); // 0.5s por beat
+
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        typeof(RhythmManager).GetField("songPositionField", flags).SetValue(RhythmManager.Instance, 2.0f);
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 4.0f);
+
+        // Desfase de 0.16s: 0.16s / 0.5s = 0.32 beats -> Beat 4.32
+        // Esta dentro de searchWindowSec (0.15 + 0.02 = 0.17s) pero supera goodTol (0.15s)
+        NoteObject note = new NoteObject();
+        note.targetPlayer = PlayerID.Player1;
+        note.laneID = 1; // Down
+        note.laneDirection = LaneDirection.Down;
+        note.beatOfThisNote = 4.32f;
+        NoteObject.ActiveNotes.Add(note);
+
+        PlayerInput input = new PlayerInput();
+        input.penalizeGhostTaps = true;
+
+        int noteHitCount = 0;
+        int noteMissCount = 0;
+        int playerMissCount = 0;
+        int hitResolvedCount = 0;
+        HitResult resolvedRating = HitResult.Good;
+
+        GameEvents.OnNoteHit += delegate { noteHitCount++; };
+        GameEvents.OnNoteMiss += delegate(PlayerID p, int l)
+        {
+            if (p == PlayerID.Player1 && l == 1) noteMissCount++;
+        };
+        GameEvents.OnPlayerMiss += delegate(PlayerID p)
+        {
+            if (p == PlayerID.Player1) playerMissCount++;
+        };
+        GameEvents.OnHitResolved += delegate(PlayerID p, HitResult r, float acc)
+        {
+            if (p == PlayerID.Player1)
+            {
+                hitResolvedCount++;
+                resolvedRating = r;
+            }
+        };
+
+        HitResult returnedResult = input.HandleLanePress(PlayerID.Player1, 1);
+
+        Assert(returnedResult == HitResult.Miss, "HandleLanePress debe retornar Miss para nota fuera de Good");
+        Assert(noteHitCount == 0, "No debe dispararse OnNoteHit en un Miss forzado");
+        Assert(noteMissCount == 1, "Debe dispararse OnNoteMiss para el carril 1");
+        Assert(playerMissCount == 1, "Debe dispararse OnPlayerMiss para Player1");
+        Assert(hitResolvedCount == 1, "Debe dispararse OnHitResolved con calificacion Miss");
+        Assert(resolvedRating == HitResult.Miss, "La calificacion de OnHitResolved debe ser Miss");
+        Assert(note.isResolved, "La nota debio consumirse como resuelta");
+
+        NoteObject.ActiveNotes.Clear();
+        Console.WriteLine("[PASS] NoteEvaluation: Despacho de eventos de Miss forzado fuera de ventana");
+    }
+
+    /// <summary>
+    /// Verifica que presionar fuera de ventana (sin notas) NUNCA otorga aciertos y aplica la regla de Ghost Tap.
+    /// </summary>
+    public static void TestNoteEvaluationOutsideWindowNeverAwardsHit()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f);
+
+        PlayerInput input = new PlayerInput();
+        input.penalizeGhostTaps = true;
+
+        int hitCount = 0;
+        int missCount = 0;
+        GameEvents.OnNoteHit += delegate { hitCount++; };
+        GameEvents.OnPlayerMiss += delegate { missCount++; };
+
+        // Presionar carril vacio con penalizacion activa
+        HitResult res = input.HandleLanePress(PlayerID.Player1, 0);
+        Assert(res == HitResult.Miss, "Pulsar sin notas debe retornar Miss");
+        Assert(hitCount == 0, "No debe otorgarse acierto sin nota valida en ventana");
+        Assert(missCount == 1, "Debe penalizarse con OnPlayerMiss");
+
+        // Presionar carril vacio con penalizacion desactivada
+        input.penalizeGhostTaps = false;
+        int eventCount = 0;
+        GameEvents.OnPlayerMiss += delegate { eventCount++; };
+        GameEvents.OnHitResolved += delegate { eventCount++; };
+        input.HandleLanePress(PlayerID.Player1, 0);
+        Assert(eventCount == 0, "Sin penalizeGhostTaps no deben dispararse eventos");
+
+        Console.WriteLine("[PASS] NoteEvaluation: Proteccion anti-spam y no otorgar aciertos fuera de ventana");
+    }
+
+    /// <summary>
+    /// Verifica el helper NoteObject.EvaluateAndResolve:
+    /// evalua directamente contra RhythmManager, consume la nota y no puede ser evaluada dos veces.
+    /// </summary>
+    public static void TestNoteEvaluationEvaluateAndResolveHelper()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f); // 0.5s por beat
+
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        typeof(RhythmManager).GetField("songPositionField", flags).SetValue(RhythmManager.Instance, 3.0f);
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 6.0f);
+
+        NoteObject note = new NoteObject();
+        note.targetPlayer = PlayerID.Player2;
+        note.laneID = 3; // Right
+        note.beatOfThisNote = 6.01f; // 0.005s desfase -> Perfect
+        NoteObject.ActiveNotes.Add(note);
+
+        int hitCount = 0;
+        GameEvents.OnNoteHit += delegate(PlayerID p, int l, HitResult r, float acc)
+        {
+            if (p == PlayerID.Player2 && l == 3 && r == HitResult.Perfect) hitCount++;
+        };
+
+        HitResult result = note.EvaluateAndResolve(false);
+        Assert(result == HitResult.Perfect, "EvaluateAndResolve debe evaluar a Perfect");
+        Assert(note.isResolved, "La nota debe quedar resuelta");
+        Assert(hitCount == 1, "Debe dispararse OnNoteHit");
+
+        // Segundo intento de evaluacion en la misma nota
+        HitResult secondResult = note.EvaluateAndResolve(false);
+        Assert(secondResult == HitResult.Miss, "Segunda evaluacion en nota resuelta debe retornar Miss");
+        Assert(hitCount == 1, "No debe dispararse ningun evento adicional en nota ya resuelta");
+
+        NoteObject.ActiveNotes.Clear();
+        Console.WriteLine("[PASS] NoteEvaluation: Helper EvaluateAndResolve unifica flujo y previene doble consumo");
+    }
+
+    /// <summary>
+    /// Verifica que pasar HitResult.Miss a ResolveHit se redirige a ResolveMiss por proteccion,
+    /// disparando eventos de fallo y nunca OnNoteHit.
+    /// </summary>
+    public static void TestNoteEvaluationResolveHitGuardsAgainstMiss()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+
+        NoteObject note = new NoteObject();
+        note.targetPlayer = PlayerID.Player1;
+        note.laneID = 0;
+
+        int noteHitCount = 0;
+        int noteMissCount = 0;
+        int playerMissCount = 0;
+
+        GameEvents.OnNoteHit += delegate { noteHitCount++; };
+        GameEvents.OnNoteMiss += delegate { noteMissCount++; };
+        GameEvents.OnPlayerMiss += delegate { playerMissCount++; };
+
+        // Llamar ResolveHit pasando HitResult.Miss
+        note.ResolveHit(HitResult.Miss, 0f);
+
+        Assert(note.isResolved, "La nota debe estar resuelta");
+        Assert(noteHitCount == 0, "ResolveHit con Miss NUNCA debe disparar OnNoteHit");
+        Assert(noteMissCount == 1, "Debe disparar OnNoteMiss como proteccion de fallo");
+        Assert(playerMissCount == 1, "Debe disparar OnPlayerMiss");
+
+        Console.WriteLine("[PASS] NoteEvaluation: ResolveHit redirige Miss a ResolveMiss por integridad");
+    }
+
     public static int RunAll()
     {
         TestNoteObjectSingleHitResolution();
@@ -460,6 +696,11 @@ public static class NoteAndInputTests
         TestPlayerInputMaxOnePowerCharge();
         TestPlayerInputPowerActivationCycle();
         TestPlayerInputP2FourLaneIndependence();
-        return 11;
+        TestNoteEvaluationEventDispatchOnHit();
+        TestNoteEvaluationEventDispatchOnForcedMiss();
+        TestNoteEvaluationOutsideWindowNeverAwardsHit();
+        TestNoteEvaluationEvaluateAndResolveHelper();
+        TestNoteEvaluationResolveHitGuardsAgainstMiss();
+        return 16;
     }
 }

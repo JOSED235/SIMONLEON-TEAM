@@ -142,11 +142,12 @@ public class PlayerInput : MonoBehaviour
     ///   1. Buscar nota activa dentro de la ventana maxima (goodTolerance + extraWindowTolerance).
     ///   2a. Si existe nota: pedir evaluacion a RhythmManager y resolver como hit o miss segun resultado.
     ///   2b. Si no existe nota: ghost tap — penalizar si penalizeGhostTaps esta activo.
-    /// Expuesto como publico para que los tests unitarios invoquen la logica directamente.
+    /// Expuesto como publico para que los tests unitarios e IA invoquen la logica directamente.
+    /// Retorna el HitResult obtenido (Perfect, Great, Good o Miss).
     /// </summary>
-    public void HandleLanePress(PlayerID player, int laneID)
+    public HitResult HandleLanePress(PlayerID player, int laneID)
     {
-        if (RhythmManager.Instance == null) return;
+        if (RhythmManager.Instance == null) return HitResult.Miss;
 
         GameConfig config = RhythmManager.Instance.gameConfig;
         float goodTol    = (config != null) ? config.goodTolerance : 0.15f;
@@ -174,6 +175,7 @@ public class PlayerInput : MonoBehaviour
                 Debug.Log(string.Format(
                     "[PlayerInput] {0} acerto carril {1} ({2}). Desfase: {3:F3}s, Precision: {4:F0}%",
                     player, laneID, result, timeDiff, accuracy * 100f));
+                return result;
             }
             else
             {
@@ -184,6 +186,7 @@ public class PlayerInput : MonoBehaviour
                 Debug.Log(string.Format(
                     "[PlayerInput] {0} pulso carril {1} fuera de tiempo (Miss forzado). Desfase: {2:F3}s",
                     player, laneID, timeDiff));
+                return HitResult.Miss;
             }
         }
         else
@@ -198,6 +201,7 @@ public class PlayerInput : MonoBehaviour
                     "[PlayerInput] Ghost Tap para {0} en carril {1} sin nota activa en ventana.",
                     player, laneID));
             }
+            return HitResult.Miss;
         }
     }
 
