@@ -288,3 +288,9 @@
 - Tarea: Crear representacion visual del medidor de presion de la papa mediante un Slider de Unity.
 - Archivos creados: Party Potato/Assets/Scripts/Minigame/PressureMeterUI.cs
 - Resumen: Se implemento un script que lee el currentPressure del HotPotatoPressureMeter y suaviza el movimiento de un Slider en la UI (Lerp), ademas de interpolar el color de amarillo a rojo segun el riesgo de explosion.
+
+## 2026-10-10 - Resolucion de Conflictos de Arquitectura (CS0111)
+- Participante: Faiber Piedrahita
+- Tarea: Resolver errores de compilacion (CS0111/CS0101) por clases duplicadas tras el merge de la reorganizacion arquitectonica con feature/potato.
+- Archivos modificados/movidos: Se eliminaron los duplicados en Minigame/ (AIController, PowerUpManager, NoteObject, NoteSpawner, PlayerInput, RhythmManager) moviendolos con sus respectivos .meta a sus nuevas carpetas Gameplay/ y Rhythm/ para preservar las referencias (GUIDs) usadas en los Prefabs y en el SampleScene.
+- Resumen: El merge trajo los archivos tanto en su ubicacion antigua (Minigame/) como en la nueva (Gameplay/, Rhythm/). Para no romper las referencias de Unity, se priorizaron los .meta originales y se ubicaron los archivos en las nuevas carpetas segun la nueva arquitectura definida por el equipo.
