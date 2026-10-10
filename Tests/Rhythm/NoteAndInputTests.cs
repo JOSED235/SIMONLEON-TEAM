@@ -289,6 +289,164 @@ public static class NoteAndInputTests
         Console.WriteLine("[PASS] NoteSpawner: HandlePowerExpired revierte solo la victima correcta");
     }
 
+    /// <summary>
+    /// Verifica que PlayerInput.HandlePowerExpired revierte ElectricPotato
+    /// solo en el jugador victima registrado, dejando intacto al otro jugador.
+    /// </summary>
+    public static void TestPlayerInputElectricPotatoExpiryTargetsCorrectVictim()
+    {
+        GameEvents.ResetAllEvents();
+
+        PlayerInput input = new PlayerInput();
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var type  = typeof(PlayerInput);
+
+        // P2 activa ElectricPotato -> victima es P1
+        var activateMethod = type.GetMethod("HandlePowerActivated", flags);
+        activateMethod.Invoke(input, new object[] { PlayerID.Player2, PowerType.ElectricPotato });
+
+        bool p1Electric = (bool)type.GetField("p1ElectricActive", flags).GetValue(input);
+        bool p2Electric = (bool)type.GetField("p2ElectricActive", flags).GetValue(input);
+        PlayerID victim = (PlayerID)type.GetField("electricVictim", flags).GetValue(input);
+
+        Assert(p1Electric,              "p1ElectricActive debe estar true (P1 es victima)");
+        Assert(!p2Electric,             "p2ElectricActive no debe alterarse (P2 es atacante)");
+        Assert(victim == PlayerID.Player1, "electricVictim debe registrarse como Player1");
+
+        // Expirar el poder: solo P1 debe restaurarse
+        var expireMethod = type.GetMethod("HandlePowerExpired", flags);
+        expireMethod.Invoke(input, new object[] { PowerType.ElectricPotato });
+
+        p1Electric = (bool)type.GetField("p1ElectricActive", flags).GetValue(input);
+        victim     = (PlayerID)type.GetField("electricVictim", flags).GetValue(input);
+
+        Assert(!p1Electric,           "p1ElectricActive debe volver a false tras expirar ElectricPotato");
+        Assert(victim == PlayerID.None, "electricVictim debe limpiarse a None tras expiracion");
+
+        Console.WriteLine("[PASS] PlayerInput: HandlePowerExpired revierte ElectricPotato solo en la victima correcta");
+    }
+
+    /// <summary>
+    /// Verifica que HandlePowerUnlocked respeta la restriccion de maxima 1 carga
+    /// por jugador: si ya hay un poder almacenado, el nuevo se descarta.
+    /// </summary>
+    public static void TestPlayerInputMaxOnePowerCharge()
+    {
+        GameEvents.ResetAllEvents();
+
+        PlayerInput input = new PlayerInput();
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var type  = typeof(PlayerInput);
+
+        var unlockMethod = type.GetMethod("HandlePowerUnlocked", flags);
+
+        // Primer desbloqueo: se almacena RocketPotato
+        unlockMethod.Invoke(input, new object[] { PlayerID.Player1, PowerType.RocketPotato });
+        PowerType p1Power = (PowerType)type.GetField("p1AvailablePower", flags).GetValue(input);
+        Assert(p1Power == PowerType.RocketPotato, "Primer poder desbloqueado debe almacenarse");
+
+        // Segundo desbloqueo mientras ya hay carga: debe ignorarse
+        unlockMethod.Invoke(input, new object[] { PlayerID.Player1, PowerType.GhostPotato });
+        p1Power = (PowerType)type.GetField("p1AvailablePower", flags).GetValue(input);
+        Assert(p1Power == PowerType.RocketPotato, "El poder almacenado no debe reemplazarse si ya hay una carga");
+
+        Console.WriteLine("[PASS] PlayerInput: Maximo una carga de poder por jugador");
+    }
+
+    /// <summary>
+    /// Verifica el ciclo completo de activacion de poder:
+    /// desbloqueo -> carga disponible -> pulsacion de tecla -> consumo y evento.
+    /// </summary>
+    public static void TestPlayerInputPowerActivationCycle()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+
+        PlayerInput input = new PlayerInput();
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var type  = typeof(PlayerInput);
+
+        // Desbloquear poder para P1 directamente via evento
+        var unlockMethod = type.GetMethod("HandlePowerUnlocked", flags);
+        unlockMethod.Invoke(input, new object[] { PlayerID.Player1, PowerType.GhostPotato });
+
+        PlayerID activatedBy = PlayerID.None;
+        PowerType activatedPower = PowerType.None;
+        int activationCount = 0;
+        GameEvents.OnPowerActivated += delegate(PlayerID p, PowerType pw)
+        {
+            activatedBy    = p;
+            activatedPower = pw;
+            activationCount++;
+        };
+
+        // Simular pulsacion de tecla de poder para P1
+        var pressMethod = type.GetMethod("HandlePowerPress", flags);
+        pressMethod.Invoke(input, new object[] { PlayerID.Player1 });
+
+        Assert(activationCount == 1,                      "Debe dispararse exactamente un OnPowerActivated");
+        Assert(activatedBy == PlayerID.Player1,           "El activador debe ser Player1");
+        Assert(activatedPower == PowerType.GhostPotato,   "El poder activado debe ser GhostPotato");
+
+        // La carga debe haberse consumido
+        PowerType p1Power = (PowerType)type.GetField("p1AvailablePower", flags).GetValue(input);
+        Assert(p1Power == PowerType.None, "La carga de P1 debe quedar en None tras activar el poder");
+
+        // Una segunda pulsacion no debe generar un nuevo evento
+        pressMethod.Invoke(input, new object[] { PlayerID.Player1 });
+        Assert(activationCount == 1, "Sin carga disponible no debe dispararse un segundo OnPowerActivated");
+
+        Console.WriteLine("[PASS] PlayerInput: Ciclo completo de activacion de poder (desbloqueo, uso y consumo)");
+    }
+
+    /// <summary>
+    /// Verifica que los cuatro carriles de P2 (WASD) se resuelven independientemente
+    /// y que la nota correcta por carril se consume sin afectar otros carriles.
+    /// </summary>
+    public static void TestPlayerInputP2FourLaneIndependence()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f); // 0.5s por beat
+
+        // Simular beat en 8.0 exacto
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        typeof(RhythmManager).GetField("songPositionField",      flags).SetValue(RhythmManager.Instance, 4.0f);
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 8.0f);
+
+        // Crear una nota para P2 en cada uno de los 4 carriles, todas en Beat 8.0
+        NoteObject[] notes = new NoteObject[4];
+        for (int i = 0; i < 4; i++)
+        {
+            notes[i] = new NoteObject();
+            notes[i].targetPlayer  = PlayerID.Player2;
+            notes[i].laneID        = i;
+            notes[i].beatOfThisNote = 8.0f;
+            NoteObject.ActiveNotes.Add(notes[i]);
+        }
+
+        PlayerInput input = new PlayerInput();
+        input.penalizeGhostTaps = false;
+
+        int hitCount = 0;
+        GameEvents.OnNoteHit += delegate(PlayerID p, int lane, HitResult r, float acc)
+        {
+            if (p == PlayerID.Player2) hitCount++;
+        };
+
+        // Presionar carril 1 (Down) de P2: solo esa nota debe resolverse
+        input.HandleLanePress(PlayerID.Player2, 1);
+
+        Assert(notes[1].isResolved,  "La nota del carril 1 (Down) de P2 debe estar resuelta");
+        Assert(!notes[0].isResolved, "La nota del carril 0 (Left) de P2 no debe estar resuelta");
+        Assert(!notes[2].isResolved, "La nota del carril 2 (Up) de P2 no debe estar resuelta");
+        Assert(!notes[3].isResolved, "La nota del carril 3 (Right) de P2 no debe estar resuelta");
+        Assert(hitCount == 1, "Debe registrarse exactamente un acierto");
+
+        NoteObject.ActiveNotes.Clear();
+        Console.WriteLine("[PASS] PlayerInput: Los cuatro carriles de P2 son independientes");
+    }
+
     public static int RunAll()
     {
         TestNoteObjectSingleHitResolution();
@@ -298,6 +456,10 @@ public static class NoteAndInputTests
         TestPlayerInputGhostTapPenalty();
         TestGetClosestActiveNoteByTime();
         TestNoteSpawnerPowerExpiryTargetsCorrectVictim();
-        return 7;
+        TestPlayerInputElectricPotatoExpiryTargetsCorrectVictim();
+        TestPlayerInputMaxOnePowerCharge();
+        TestPlayerInputPowerActivationCycle();
+        TestPlayerInputP2FourLaneIndependence();
+        return 11;
     }
 }
