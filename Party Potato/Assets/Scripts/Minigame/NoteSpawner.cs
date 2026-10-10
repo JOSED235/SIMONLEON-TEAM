@@ -1,44 +1,64 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
 public class NoteLane
 {
-    public string laneName;       // Ej: "Left", "Down", "Up", "Right"
-    public Transform spawnPoint;  // Punto de origen arriba
-    public Transform hitZone;     // Zona de impacto abajo
-    
-    // Opcional: Si quieres que la flecha izquierda sea de un color/forma distinta a la derecha.
-    // Si lo dejas vacío, usará el notePrefab general.
+    public string laneName;       
+    public Transform spawnPoint;  
+    public Transform hitZone;     
     public GameObject specificNotePrefab; 
 }
 
 public class NoteSpawner : MonoBehaviour
 {
     [Header("Configuración General")]
-    public GameObject defaultNotePrefab; // Prefab base si el carril no tiene uno específico
+    public GameObject defaultNotePrefab; 
 
     [Header("Carriles (Lanes)")]
-    [Tooltip("Configura aquí tus 4 carriles (0=Izq, 1=Abajo, 2=Arriba, 3=Der)")]
     public NoteLane[] lanes; 
 
     [Header("Configuración de Caída")]
     public float beatsOnScreen = 2f; 
     
+    // OPTIMIZACIÓN: Lista centralizada de notas vivas para no usar FindObjectsOfType
+    [HideInInspector] public List<NoteObject> activeNotes = new List<NoteObject>();
+    
     private int nextBeatToSpawn = 1;
 
     private void Update()
     {
-        if (RhythmManager.Instance == null || lanes == null || lanes.Length == 0) return;
+        if (RhythmManager.Instance == null || lanes == null || lanes.Length < 2) return;
 
         float currentBeat = RhythmManager.Instance.songPositionInBeats;
 
-        // Generar notas anticipadamente
         if (currentBeat >= (nextBeatToSpawn - beatsOnScreen))
         {
-            // Elegir un carril al azar para generar la nota
-            int randomLaneIndex = Random.Range(0, lanes.Length);
-            
-            SpawnNoteForBeat(nextBeatToSpawn, randomLaneIndex);
+            // TRUCO MULTIJUGADOR: Usamos una semilla matemática basada en el Beat.
+            // Si el Jugador 1 y el Jugador 2 tienen Spawners distintos, AMBOS generarán
+            // la flecha exactamente en el mismo carril al mismo tiempo de forma "aleatoria".
+            Random.InitState(nextBeatToSpawn * 12345);
+
+            bool isDoubleNote = (nextBeatToSpawn % 4 == 0);
+
+            if (isDoubleNote)
+            {
+                int lane1 = Random.Range(0, lanes.Length);
+                int lane2 = Random.Range(0, lanes.Length);
+                
+                while (lane2 == lane1) 
+                {
+                    lane2 = Random.Range(0, lanes.Length);
+                }
+                
+                SpawnNoteForBeat(nextBeatToSpawn, lane1);
+                SpawnNoteForBeat(nextBeatToSpawn, lane2);
+            }
+            else
+            {
+                int randomLaneIndex = Random.Range(0, lanes.Length);
+                SpawnNoteForBeat(nextBeatToSpawn, randomLaneIndex);
+            }
             
             nextBeatToSpawn++; 
         }
@@ -56,9 +76,9 @@ public class NoteSpawner : MonoBehaviour
         
         noteObj.beatOfThisNote = beatTarget;
         noteObj.beatsOnScreen = beatsOnScreen;
-        noteObj.laneID = laneIndex; // 0, 1, 2 o 3
-        
+        noteObj.laneID = laneIndex; 
         noteObj.spawnPos = lane.spawnPoint.position;
         noteObj.targetPos = lane.hitZone.position;
+        noteObj.mySpawner = this; // Se inscribe en el Spawner local
     }
 }

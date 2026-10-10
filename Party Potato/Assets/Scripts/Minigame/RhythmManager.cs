@@ -1,15 +1,18 @@
 using UnityEngine;
 
+public enum HitResult { Perfect, Good, Bad, Miss }
+
 public class RhythmManager : MonoBehaviour
 {
     public static RhythmManager Instance;
 
     [Header("Configuración de la Pista")]
-    [Tooltip("Billie Jean tiene un tempo de aprox 117 BPM")]
     public float songBpm = 117f; 
     
-    [Tooltip("Margen de error en segundos para acertar el golpe (ej. 0.15 = 150ms)")]
-    public float inputTolerance = 0.15f; 
+    [Header("Ventanas de Precisión (en Segundos)")]
+    public float perfectWindow = 0.045f; // 45ms
+    public float goodWindow = 0.090f;    // 90ms
+    public float badWindow = 0.135f;     // 135ms
 
     [Header("Datos en Tiempo Real")]
     public float secPerBeat;
@@ -20,6 +23,8 @@ public class RhythmManager : MonoBehaviour
     [Header("Referencias")]
     public AudioSource musicSource;
 
+    private int lastReportedBeat = 0;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -28,11 +33,7 @@ public class RhythmManager : MonoBehaviour
 
     private void Start()
     {
-        // Calcular cuántos segundos dura un "Beat" (golpe)
         secPerBeat = 60f / songBpm;
-        
-        // dspTime es el reloj interno del motor de audio de Unity. 
-        // Es muchísimo más preciso que Time.time para juegos de ritmo.
         dspSongTime = (float)AudioSettings.dspTime;
         
         if (musicSource != null)
@@ -41,14 +42,9 @@ public class RhythmManager : MonoBehaviour
         }
     }
 
-    private int lastReportedBeat = 0;
-
     private void Update()
     {
-        // Tiempo actual de la canción usando el reloj de alta precisión
         songPosition = (float)(AudioSettings.dspTime - dspSongTime);
-        
-        // Calcular en qué beat (pulso) exacto nos encontramos
         songPositionInBeats = songPosition / secPerBeat;
 
         // Imprimir información cada vez que haya un pulso exacto (Beat)
@@ -56,32 +52,24 @@ public class RhythmManager : MonoBehaviour
         if (currentBeat > lastReportedBeat)
         {
             lastReportedBeat = currentBeat;
-            Debug.Log($"[RhythmManager] 🎵 BEAT: {currentBeat} | Canción: {songPosition:F2}s | Reloj DSP: {AudioSettings.dspTime:F2}");
+            // Quitamos el Debug.Log excesivo de la consola para evitar que ralentice el juego (lag de editor)
+            // Si quieres ver los beats, descomenta la siguiente línea:
+            // Debug.Log($"[Metrónomo] Beat: {currentBeat}");
         }
     }
 
     /// <summary>
-    /// Verifica si el jugador pulsó el botón a tiempo con el ritmo de la canción.
-    /// Devuelve un valor de 0 a 1 (1 = perfecto, 0 = fallo catastrófico).
+    /// Evalúa la precisión matemática del impacto según ventanas de tiempo realistas.
     /// </summary>
-    public float CheckHitAccuracy()
+    public HitResult CheckHitResult()
     {
-        // Buscar el beat entero más cercano al momento de pulsar
         float closestBeat = Mathf.Round(songPositionInBeats);
-        
-        // Calcular la diferencia en segundos entre nuestro pulso y el beat perfecto
         float timeDifference = Mathf.Abs(songPositionInBeats - closestBeat) * secPerBeat;
 
-        // Si la diferencia está dentro de la tolerancia, es un acierto
-        if (timeDifference <= inputTolerance)
-        {
-            // Retorna un porcentaje de precisión. 1.0f es el centro exacto.
-            float accuracy = 1f - (timeDifference / inputTolerance);
-            Debug.Log($"[RhythmManager] ¡ACIERTO RÍTMICO! Precisión: {accuracy * 100:F0}%");
-            return accuracy;
-        }
+        if (timeDifference <= perfectWindow) return HitResult.Perfect;
+        if (timeDifference <= goodWindow) return HitResult.Good;
+        if (timeDifference <= badWindow) return HitResult.Bad;
         
-        Debug.Log("[RhythmManager] ¡FALLO! (Out of Sync)");
-        return 0f;
+        return HitResult.Miss;
     }
 }

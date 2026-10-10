@@ -126,7 +126,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NoteObject
   beatOfThisNote: 0
-  beatsOnScreen: 2
+  beatsOnScreen: 4
   laneID: 0
   spawnPos: {x: 0, y: 0, z: 0}
   targetPos: {x: 0, y: 0, z: 0}
