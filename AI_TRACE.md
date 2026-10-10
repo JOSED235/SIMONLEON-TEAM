@@ -13,28 +13,28 @@
 - Implementación de Input del Jugador (`PlayerInputController.cs`). Se configuró un sistema de validación matemática: cuando se presiona una tecla, el sistema busca la nota correspondiente y cruza la tolerancia con el `RhythmManager`. Si coincide, aumenta el combo y destruye la nota.
 - Refinamiento de métricas rítmicas: Se implementaron ventanas de impacto FNF reales (`Perfect`, `Good`, `Bad`, `Miss`) en `RhythmManager.cs` basadas en milisegundos (`HitResult` enum).
 - Mejoras de feedback visual en `PlayerInputController.cs`: Ahora los HitZones parpadean de colores (Cyan para Perfect, Verde para Good, Naranja para Bad) y se eliminaron los `Debug.Log` excesivos del metrónomo que causaban caída de FPS en el Editor.
-- Optimización extrema de rendimiento y preparación multijugador: 
+- Optimización extrema de rendimiento y preparación multijugador:
   - Se eliminó el uso de `FindObjectsOfType` en favor de una `List<NoteObject>` dinámica dentro de `NoteSpawner`, reduciendo a cero el costo de memoria (Garbage Collection) en cada pulsación.
   - Se implementó `Random.InitState` determinista basado en el beat actual. Esto permite que los Spawners del Jugador 1 y Jugador 2 generen las mismas notas exactas de forma asíncrona pero matemáticamente idéntica.
 
 ## 2026-10-09 - Arquitectura Core: GameEnums y GameEvents
 
-- Participante: Jose David RodrÃ­guez Pinilla
-- Tarea: CreaciÃ³n de enumeraciones base (`GameEnums.cs`) y bus de eventos estÃ¡tico desacoplado (`GameEvents.cs`) en `Party Potato/Assets/Scripts/Core/`.
+- Participante: Jose David Rodríguez Pinilla
+- Tarea: Creación de enumeraciones base (`GameEnums.cs`) y bus de eventos estático desacoplado (`GameEvents.cs`) en `Party Potato/Assets/Scripts/Core/`.
 - Archivos creados:
   - `Party Potato/Assets/Scripts/Core/GameEnums.cs`
   - `Party Potato/Assets/Scripts/Core/GameEvents.cs`
-- Resumen: Se definieron los enums para jugadores (`PlayerID`), resultados de impacto (`HitResult`: Miss, Good, Perfect), poderes (`PowerType`), ciclo de partida (`MatchState`) y estados de la papa (`PotatoState`). Se implementÃ³ el bus de eventos desacoplado con disparadores estÃ¡ticos y mÃ©todo `ResetAllEvents` para cubrir ritmo, trayectorias de la papa, aciertos, rachas, poderes, calor y control de rondas.
-- Limitaciones: Los eventos estÃ¡n declarados y listos para invocarse; falta conectar emisores (`RhythmManager`, `PotatoController`) y receptores (`HitDetection`, `ComboSystem`, `MatchManager`, `GameUI`).
+- Resumen: Se definieron los enums para jugadores (`PlayerID`), resultados de impacto (`HitResult`: Miss, Good, Perfect), poderes (`PowerType`), ciclo de partida (`MatchState`) y estados de la papa (`PotatoState`). Se implementó el bus de eventos desacoplado con disparadores estáticos y método `ResetAllEvents` para cubrir ritmo, trayectorias de la papa, aciertos, rachas, poderes, calor y control de rondas.
+- Limitaciones: Los eventos están declarados y listos para invocarse; falta conectar emisores (`RhythmManager`, `PotatoController`) y receptores (`HitDetection`, `ComboSystem`, `MatchManager`, `GameUI`).
 
 ## 2026-10-09 - Pruebas automatizadas para Core
 
 - Participante: Jose David Rodriguez
 - Tarea: Crear pruebas para `GameEnums`, `GameEvents`, `GameConfig` y `MatchManager`.
 - Archivos creados: `Tests/Core/GameEnumsTests.cs`, `Tests/Core/GameEventsTests.cs`, `Tests/Core/MatchManagerTests.cs`, `Tests/Core/UnityEngineStubs.cs` y `Tests/run-core-tests.ps1`.
-- Resumen: Se probaron los valores de los enums, los 17 disparadores de eventos y sus parÃ¡metros, limpieza de suscripciones, valores predeterminados de configuraciÃ³n y los estados, turnos, puntajes, victoria, reinicio y suscripciones de `MatchManager`.
-- Pruebas: `Tests/run-core-tests.ps1` compilÃ³ los scripts Core reales y ejecutÃ³ 34 pruebas; todas pasaron.
-- Limitaciones: `Party Potato/` no contiene `Packages/` ni `ProjectSettings/`. `MatchManager` se probÃ³ con dobles mÃ­nimos de `UnityEngine`, no en el Editor/Test Runner; falta validar la integraciÃ³n y temporizaciÃ³n real en Unity.
+- Resumen: Se probaron los valores de los enums, los 17 disparadores de eventos y sus parámetros, limpieza de suscripciones, valores predeterminados de configuración y los estados, turnos, puntajes, victoria, reinicio y suscripciones de `MatchManager`.
+- Pruebas: `Tests/run-core-tests.ps1` compiló los scripts Core reales y ejecutó 34 pruebas; todas pasaron.
+- Limitaciones: `Party Potato/` no contiene `Packages/` ni `ProjectSettings/`. `MatchManager` se probó con dobles mínimos de `UnityEngine`, no en el Editor/Test Runner; falta validar la integración y temporización real en Unity.
 
 ## 2026-10-10 - Actualizacion Integral de Documentacion a Beat Potato (Papa Beat)
 
@@ -78,6 +78,111 @@
 - Pruebas realizadas: Ejecucion automatizada de `Tests/run-core-tests.ps1` compilando la suite completa; las 35 pruebas unitarias pasaron satisfactoriamente.
 - Limitaciones: Falta conectar la emision real de calor desde `PotatoHeatSystem.cs` y el mapeo de teclas en `PlayerInput.cs`.
 
+## 2026-10-10 - Refactorizacion y Completitud de RhythmManager
+
+- Participante: Felipe Calderon
+- Tarea: Implementacion del reloj musical de alta precision, conversiones bidireccionales y evaluacion desacoplada en RhythmManager.cs.
+- Archivos creados/modificados:
+  - `Party Potato/Assets/Scripts/Rhythm/RhythmManager.cs`
+  - `Tests/Core/UnityEngineStubs.cs`
+  - `Tests/Rhythm/RhythmManagerTests.cs`
+  - `Tests/run-rhythm-tests.ps1`
+- Resumen: Se actualizo RhythmManager para operar como unico reloj musical basado estrictamente en AudioSettings.dspTime. Se anadieron metodos de conversion bidireccional (BeatToDspTime, DspTimeToBeat, BeatToSongPosition, SongPositionToBeat) para permitir que notas y carriles calculen sus tiempos objetivo sin depender de la tasa de fotogramas ni de posiciones visuales. Se incorporo emision automatica de eventos OnBeat y OnMeasure a traves de GameEvents en cada pulso de la cancion. Se implemento el metodo EvaluateHit para clasificar notas en Perfect (+-50 ms), Great (+-100 ms), Good (+-150 ms) y Miss segun GameConfig, soportando reduccion de ventana por Papa Electrica.
+- Pruebas realizadas: Se compilaron y ejecutaron 5 pruebas unitarias automatizadas en `Tests/run-rhythm-tests.ps1` (calculo de duracion de beats por BPM, conversiones matematicas, ciclo de reproduccion, evaluacion de ventanas de impacto y tolerancia de Papa Electrica), aprobando al 100%. Adicionalmente se verificaron las 35 pruebas de Core en `Tests/run-core-tests.ps1`.
+- Limitaciones: Falta conectar la generacion de notas por patrones en `NoteSpawner.cs`, el manejo de auto-miss en `NoteObject.cs` y la lectura de entradas del teclado en `PlayerInput.cs`.
+
+## 2026-10-10 - Actualizacion de NoteSpawner y NoteObject
+
+- Participante: Felipe Calderon
+- Tarea: Completar NoteSpawner.cs y NoteObject.cs segun las reglas de la division de responsabilidades del backend.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Rhythm/NoteSpawner.cs`
+  - `Party Potato/Assets/Scripts/Rhythm/NoteObject.cs`
+  - `Tests/Rhythm/NoteAndInputTests.cs`
+  - `Tests/Core/UnityEngineStubs.cs`
+- Resumen:
+  - **NoteSpawner**: Se corrigio `HandlePowerExpired` para rastrear la victima exacta de cada poder (`rocketVictim`, `ghostVictim`) y revertir unicamente el modificador del jugador afectado al expirar, evitando desactivar efectos activos del otro jugador. Se agregaron comentarios de arquitectura alineados con el GDD y la division de responsabilidades.
+  - **NoteObject**: Se agrego el metodo `GetClosestActiveNoteByTime` que acepta la tolerancia en segundos (igual unidad que `GameConfig.goodTolerance` y `RhythmManager.EvaluateHit`), eliminando la necesidad de conversion manual en `PlayerInput` y `AIController`. Se extrajo `ApplyGhostEffect` como metodo privado para mayor claridad. Se mejoraron los comentarios de invariante y responsabilidades.
+  - **UnityEngineStubs**: Se agrego el stub de `HideInInspectorAttribute` necesario para compilar `NoteObject.cs` fuera de Unity.
+  - **NoteAndInputTests**: Se agregaron dos nuevas pruebas: `TestGetClosestActiveNoteByTime` (verifica busqueda por segundos) y `TestNoteSpawnerPowerExpiryTargetsCorrectVictim` (verifica que la expiracion de poder revierte solo la victima correcta).
+- Pruebas realizadas: 12 pruebas de ritmo y entrada (`run-rhythm-tests.ps1`) + 35 pruebas de Core (`run-core-tests.ps1`) = 47 pruebas aprobadas al 100%.
+- Limitaciones: Falta implementar `AIController.cs`. La validacion en el Editor de Unity (carriles, prefabs, posiciones de spawn) sigue pendiente del integrador.
+
+## 2026-10-10 - Completitud y Correccion de PlayerInput.cs
+
+- Participante: Felipe Calderon
+- Tarea: Completar PlayerInput.cs segun los requisitos de la division de responsabilidades del backend.
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Rhythm/PlayerInput.cs`
+  - `Tests/Rhythm/NoteAndInputTests.cs`
+- Resumen:
+  - Se corrigio `HandlePowerExpired` que reseteaba ambos jugadores al expirar `ElectricPotato`. Ahora se rastrea `electricVictim` (igual que `rocketVictim`/`ghostVictim` en NoteSpawner) y solo se revierte el estado del jugador afectado.
+  - Se reemplazo la busqueda manual con conversion beats/segundos por la llamada directa a `NoteObject.GetClosestActiveNoteByTime`, alineando las unidades con `GameConfig` y `EvaluateHit`.
+  - Se reforzó la restriccion de 1 carga maxima por jugador en `HandlePowerUnlocked`: si ya hay una carga almacenada, la nueva se descarta.
+  - Se consumo la carga de poder antes de publicar `TriggerPowerActivated` para evitar doble activacion en condiciones de carrera.
+  - Se mejoraron comentarios de arquitectura e invariantes segun el GDD.
+  - Se agregaron 4 nuevas pruebas unitarias: `TestPlayerInputElectricPotatoExpiryTargetsCorrectVictim`, `TestPlayerInputMaxOnePowerCharge`, `TestPlayerInputPowerActivationCycle`, `TestPlayerInputP2FourLaneIndependence`.
+- Pruebas realizadas: 16 pruebas de ritmo y entrada + 35 de Core = 51 pruebas aprobadas al 100%.
+- Limitaciones: Falta implementar `AIController.cs`. La validacion en el Editor de Unity (mapeo de teclas, prefabs, escena Main) sigue pendiente del integrador de Unity.
+
+## 2026-10-10 - Implementacion Integral de la Evaluacion de Notas
+
+- Participante: Felipe Calderon
+- Tarea: Implementar la evaluacion de notas (Punto 4 de la division de responsabilidades del backend).
+- Archivos modificados:
+  - `Party Potato/Assets/Scripts/Rhythm/RhythmManager.cs`
+  - `Party Potato/Assets/Scripts/Rhythm/NoteObject.cs`
+  - `Party Potato/Assets/Scripts/Rhythm/PlayerInput.cs`
+  - `Tests/Core/UnityEngineStubs.cs`
+  - `Tests/Rhythm/RhythmManagerTests.cs`
+  - `Tests/Rhythm/NoteAndInputTests.cs`
+- Resumen:
+  - Se estructuro el sistema de evaluacion temporal desacoplado en `RhythmManager.cs`, agregando `ClassifyTimeDifference`, `GetHitScore`, `EvaluateHitFull` (empaquetado en `NoteEvaluationResult`) y sobrecarga `EvaluateNote(NoteObject)`.
+  - Se ajusto el calculo de `accuracyNormalized` en `RhythmManager.EvaluateHit` y `ClassifyTimeDifference` para coincidir exactamente con los rangos porcentuales definidos en el GDD de forma continua y monotonica: Perfect (>=90%, 0.90 a 1.00), Great (70% a 89%, 0.70 a 0.89), Good (50% a 69%, 0.50 a 0.69) y Miss (0%), respetando las tolerancias de `GameConfig` y la ventana reducida bajo Papa Electrica.
+  - Se incorporo en `NoteObject.cs` el metodo `EvaluateAndResolve(bool isElectric)` para unificar el flujo de evaluacion entre `PlayerInput` y `AIController`, junto con una proteccion en `ResolveHit` que redirige cualquier `HitResult.Miss` a `ResolveMiss()`, garantizando que `OnNoteHit` nunca se dispare en un fallo.
+  - Se actualizo `HandleLanePress` en `PlayerInput.cs` para retornar `HitResult` directamente facilitando su consulta por pruebas e IA sin alterar la publicacion de eventos en el bus.
+  - Se agrego el stub de `Mathf.Lerp` en `UnityEngineStubs.cs` para soporte fuera de Unity.
+  - Se incorporaron 9 pruebas unitarias nuevas (4 en `RhythmManagerTests` y 5 en `NoteAndInputTests`), validando limites de ventanas exactos, simetria temporal, despacho estricto de eventos (`OnNoteHit`, `OnHitResolved` vs `OnNoteMiss`, `OnPlayerMiss`), proteccion anti-spam (`Ghost Tap`) y consumo unico de notas.
+- Pruebas realizadas: 25 pruebas de ritmo y entrada (`run-rhythm-tests.ps1`) + 35 de Core (`run-core-tests.ps1`) = 60 pruebas unitarias aprobadas al 100%.
+- Limitaciones: Falta implementar `AIController.cs` (Punto 5 del backend). La integracion visual (animaciones, prefabs, HitFeedbackUI) corresponde al responsable de Unity.
+
+## 2026-10-10 - Implementacion de AIController para Modo Solo vs CPU
+
+- Participante: Felipe Calderon
+- Tarea: Implementar AIController.cs (Punto 5 de la division de responsabilidades del backend).
+- Archivos creados/modificados:
+  - `Party Potato/Assets/Scripts/Gameplay/AIController.cs` (creado)
+  - `Party Potato/Assets/Scripts/Gameplay/AIController.cs.meta` (creado)
+  - `Tests/Rhythm/AIControllerTests.cs` (creado)
+  - `Tests/run-rhythm-tests.ps1` (modificado)
+- Resumen:
+  - Se creo `AIController.cs` en `Gameplay/` para operar como rival virtual en el modo Solo vs CPU (por defecto Jugador 2), sincronizado con `RhythmManager.dspTime` y `songPositionInBeats`.
+  - Se calibraron las distribuciones de probabilidad y precision segun las especificaciones del GDD para cada dificultad: Facil (~70% precision, predominan Good y fallos frecuentes), Normal (~85% precision, combinacion de Great y Perfect) y Dificil (~96% precision, altas rachas y fallos minimos).
+  - La IA procesa y resuelve las notas mediante el mismo flujo compartido que el jugador humano (`NoteObject.EvaluateAndResolve`), garantizando consumo unico y emision uniforme de eventos en `GameEvents` sin duplicar el motor de notas ni la logica de puntuacion.
+  - Se incorporo la activacion automatica de poderes acumulados con retrasos escalonados por dificultad (Dificil 0.25 beats, Normal 2.0 beats, Facil 4.0 beats), junto con deteccion de sabotaje por Papa Electrica y reinicio de estado al inicio de ronda.
+  - Se implementaron 7 pruebas unitarias automatizadas en `Tests/Rhythm/AIControllerTests.cs` validando distribucion de probabilidades, filtrado de notas por PlayerID, flujo de evaluacion compartido, auto-miss en fallos, ciclo de poderes, reaccion a sabotajes y limpieza en nuevas rondas.
+- Pruebas realizadas: 32 pruebas de ritmo, entrada e IA (`run-rhythm-tests.ps1`) + 35 de Core (`run-core-tests.ps1`) = 67 pruebas aprobadas al 100%.
+- Limitaciones: La conexion del componente en el Inspector de Unity dentro de `Main.unity` y la seleccion de dificultad desde la pantalla de menu corresponden al responsable del Editor.
+
+## 2026-10-10 - Auditoria y Cobertura Integral de Pruebas de Ritmo y Entrada
+
+- Participante: Felipe Calderon
+- Tarea: Revision y consolidacion exhaustiva de las pruebas asignadas en la division de responsabilidades del backend (7 topicos clave).
+- Archivos modificados:
+  - `Tests/Rhythm/RhythmManagerTests.cs`
+  - `Tests/Rhythm/NoteAndInputTests.cs`
+- Resumen:
+  - Se auditaron y reforzaron con pruebas unitarias dedicadas los 7 puntos obligatorios del backend asignados a Felipe:
+    1. **Conversion beat/tiempo DSP**: Se agrego `TestBidirectionalConversionsWithSongOffsetAndFractionalBeats` validando tempo 117 BPM, latencia `songOffset` y subdivisiones de compas (corcheas y semicorcheas).
+    2. **Limites de cada ventana**: Se anadio `TestCustomGameConfigWindowsAdaptive` comprobando adaptabilidad dinamica ante tolerancias arbitrarias de `GameConfig` y reduccion por Papa Electrica.
+    3. **Cuatro carriles**: Se incorporaron `TestFourLanesP1IndependenceAndDirectionMapping` y `TestCrossPlayerLaneIsolation` validando independencia y aislamiento estricto de los 4 carriles entre P1 y P2.
+    4. **Asignacion de controles**: Se implemento `TestPlayerKeyBindingsDefaultsAndCustomReassignment` verificando mapeos oficiales de P1 (Flechas + Enter/RShift) y P2 (WASD + Espacio/LShift), asi como inversion de controles.
+    5. **Auto-miss**: Se implemento `TestNoteObjectAutoMissThresholdLifecycle` simulando el ciclo de `NoteObject.Update()` y detonacion de Miss al superar `missThreshold` (1.25).
+    6. **Pulsaciones repetidas**: Se anadio `TestRepeatedPressesAntiSpamAndSequentialNotes` cubriendo penalizacion por machacado continuo y prevencion de consumo prematuro en notas secuenciales en el mismo carril.
+    7. **Resolucion unica de nota**: Se implemento `TestExhaustiveSingleResolutionInvariance` garantizando emision estricta de maximo 1 resolucion ante cualquier permutacion de llamadas.
+- Pruebas realizadas: 40 pruebas de ritmo, entrada e IA (`run-rhythm-tests.ps1`) + 35 de Core (`run-core-tests.ps1`) = 75 pruebas unitarias aprobadas al 100%.
+- Limitaciones: Cobertura de backend 100% verificada fuera de Unity; la integracion en escena con prefabs y renderizado de sprites queda a cargo del responsable del Editor.
+
 ## 2026-10-10 - Implementación de PotatoHeatSystem
 - Participante: Jose David Rodriguez Pinilla
 - Tarea: Creacion de `PotatoHeatSystem.cs` para gestionar el nivel de calor y la detonacion de la papa.
@@ -115,7 +220,6 @@
 - Resumen: El `MatchManager` ya contenia la implementacion correcta del ciclo de partida (Countdown -> Playing -> RoundOver -> GameOver). El countdown usa `HandleBeat` suscrito a `GameEvents.OnBeat`, respeta `config.countdownBeats`, ignora explosiones fuera del estado Playing, otorga puntos al contrario del perdedor, y reinicia todo el estado en `HandleMatchReset`. El test estaba desalineado con la nueva arquitectura event-driven; se actualizo para simular beats con `TriggerBeat()`. Resultado: 35/35 pruebas unitarias pasando.
 - Limitaciones: La corrutina `WaitAndStartNextRoundRoutine` usa `WaitForSeconds` (Unity time), que no es ejecutable en los tests de consola; el delay entre rondas no se verifica en los tests actuales (es funcionalidad de integracion en Unity).
 
-
 ## 2026-10-10 - Creacion de ComboSystem
 - Participante: Jose David Rodriguez Pinilla
 - Tarea: Crear `ComboSystem.cs` con rachas independientes por jugador, desbloqueo unico de poder y reset por ronda.
@@ -128,3 +232,53 @@
 - Resumen: ComboSystem escucha `OnHitResolved`, `OnPlayerMiss`, `OnNoteMiss` y `OnRoundStarted`. Mantiene rachas independientes para P1 y P2. Al alcanzar `config.streakThresholdForPower` aciertos consecutivos emite `OnPowerUnlocked` una sola vez (maxima una carga activa). Cualquier miss reinicia la racha del jugador y emite `OnStreakReset` solo si la racha no era ya 0. Al iniciar una nueva ronda, ambas rachas y cargas se reinician. Expone `ConsumePower()` para que PowerUpManager consuma la carga al activar un poder. Suite de 18 tests; total acumulado: 53/53 tests pasando.
 - Limitaciones: El tipo de poder emitido en `OnPowerUnlocked` es `PowerType.None`; PowerUpManager debera determinar que poder otorgar segun la logica del GDD.
 
+## 2026-10-10 - Creacion de PowerUpManager
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Crear `PowerUpManager.cs` con validacion de carga, activacion, temporizador y expiracion de poderes.
+- Archivos creados:
+  - `Party Potato/Assets/Scripts/Gameplay/PowerUpManager.cs`
+  - `Tests/Gameplay/PowerUpManagerTests.cs`
+- Archivos modificados:
+  - `Tests/run-core-tests.ps1` (agregados PowerUpManager.cs y PowerUpManagerTests.cs)
+  - `Docs/Division de responsabilidades - Backend.md` (marcado PowerUpManager como COMPLETADO)
+- Resumen: PowerUpManager valida carga disponible via ComboSystem.PowerReady1/2, consume la carga con ConsumePower(), emite OnPowerActivated al activar y OnPowerExpired al expirar (via corrutina WaitForSeconds). Un jugador solo puede tener un poder activo a la vez. HandleRoundStarted cancela poderes activos emitiendo OnPowerExpired. Los efectos concretos sobre notas (velocidad, invisibilidad, ventana electrica) son delegados a NoteSpawner/NoteObject via los eventos del bus. Soporta los 4 tipos del GDD con duraciones desde GameConfig. 12 tests nuevos; total acumulado: 65/65 PASS.
+- Limitaciones: La duracion de Papa Cohete usa un proxy en segundos (rocketDurationMeasures * 2f) porque el tempo real depende de RhythmManager que aun no esta integrado. El tipo de poder asignado al desbloquear es RocketPotato por defecto; la seleccion dinamica de poder debera coordinarse con Felipe segun el GDD.
+
+## 2026-10-10 - Merge de devJose en backend
+- Participante: Felipe Calderon
+- Tarea: Combinar rama `origin/devJose` en la rama `backend`, resolviendo conflictos de documentacion en `AI_TRACE.md`.
+- Archivos afectados:
+  - `AI_TRACE.md` (conflicto resuelto — entradas de ambas ramas conservadas en orden cronologico)
+  - `Docs/Division de responsabilidades - Backend.md` (traido desde devJose)
+  - `Party Potato/Assets/Scripts/Core/GameEvents.cs` (traido desde devJose)
+  - `Party Potato/Assets/Scripts/Core/MatchManager.cs` (traido desde devJose)
+  - `Party Potato/Assets/Scripts/Gameplay/ComboSystem.cs` (nuevo, traido desde devJose)
+  - `Party Potato/Assets/Scripts/Gameplay/PotatoHeatSystem.cs` (nuevo, traido desde devJose)
+  - `Party Potato/Assets/Scripts/Gameplay/PowerUpManager.cs` (nuevo, traido desde devJose)
+  - `Tests/Core/MatchManagerTests.cs` (traido desde devJose)
+  - `Tests/Gameplay/ComboSystemTests.cs` (nuevo, traido desde devJose)
+  - `Tests/Gameplay/PowerUpManagerTests.cs` (nuevo, traido desde devJose)
+  - `Tests/run-core-tests.ps1` (traido desde devJose)
+- Resumen: Merge exitoso. El backend de Jose David (PotatoHeatSystem, ComboSystem, PowerUpManager, MatchManager event-driven) queda integrado junto al backend de Felipe (RhythmManager, NoteSpawner, NoteObject, PlayerInput, AIController). El unico conflicto fue en AI_TRACE.md; se resolvio conservando todas las entradas de ambas ramas segun la regla de registro incremental.
+- Limitaciones: Integracion en escena Unity pendiente del responsable del Editor.
+
+## 2026-10-10 - Merge de backend en develop
+- Participante: Felipe Calderon
+- Tarea: Integrar la rama `backend` (backend completo de ritmo + gameplay) en `develop`, resolviendo conflictos con el rollback previo del develop remoto.
+- Conflictos resueltos:
+  - `AI_TRACE.md`: combinacion incremental de ambas ramas (viñetas de minijuego de develop + historial completo de backend).
+  - `Docs/Division de responsabilidades - Backend.md`: conservado desde backend (eliminado en develop por rollback).
+  - `Party Potato/Assets/Scripts/Minigame/NoteObject.cs`: conservada la version completa del backend (con EvaluateAndResolve, GetClosestActiveNoteByTime, sistema de eventos).
+  - `Party Potato/Assets/Scripts/Rhythm/NoteSpawner.cs`: conservada version backend (gestion de poderes por victima).
+  - `Party Potato/Assets/Scripts/Rhythm/RhythmManager.cs`: conservada version backend (reloj dspTime + EvaluateHit).
+  - `Tests/Core/UnityEngineStubs.cs`: conservado desde backend.
+  - `Tests/run-core-tests.ps1`: conservado desde backend (con ComboSystem y PowerUpManager).
+- Archivos integrados (nuevos en develop):
+  - `Party Potato/Assets/Scripts/Minigame/AIController.cs` (IA rival para modo Solo vs CPU)
+  - `Party Potato/Assets/Scripts/Minigame/PlayerInput.cs` (entrada de jugadores con 4 carriles y poderes)
+  - `Party Potato/Assets/Scripts/Minigame/PowerUpManager.cs` (activacion y expiracion de poderes)
+  - `Party Potato/Assets/Scripts/Gameplay/ComboSystem.cs`, `PotatoHeatSystem.cs`
+  - `Tests/Rhythm/` (suites AIControllerTests, NoteAndInputTests, RhythmManagerTests)
+  - `Tests/run-rhythm-tests.ps1`
+- Resumen: El backend completo (105 pruebas unitarias: 65 Core + 40 Rhythm/AI/Input) queda integrado en develop, coexistiendo con los assets de Unity (SampleScene, prefabs, SceneRebuilder, PlayerInputController legacy). La rama develop queda lista para que Faiber conecte los nuevos scripts en la escena principal.
+- Limitaciones: Falta conectar GameEvents, MatchManager, PotatoHeatSystem, ComboSystem y PowerUpManager en la escena Main.unity. PlayerInputController.cs (legacy de develop) puede coexistir pero debe reemplazarse por PlayerInput.cs del backend para el flujo de eventos.
