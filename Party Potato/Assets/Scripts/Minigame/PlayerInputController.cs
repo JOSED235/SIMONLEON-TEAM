@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerInputController : MonoBehaviour
 {
-    [Header("Identificación")]
+    [Header("Identificacin")]
     public string playerName = "Jugador 1";
     public PlayerID playerID = PlayerID.Player1;
     
@@ -23,35 +23,51 @@ public class PlayerInputController : MonoBehaviour
     public Color goodColor = Color.green;
     public Color badColor = new Color(1f, 0.5f, 0f); // Naranja
     public Color defaultColor = Color.white; 
+    public float popScaleMultiplier = 1.3f; // Que tan grande se hace el hitzone al presionarlo
     
     [Header("Estado del Jugador")]
     public int combo = 0;
 
-    [Header("Optimización (Cero Lag)")]
+    [Header("Optimizacin (Cero Lag)")]
     [Tooltip("El Spawner que genera las notas para este jugador")]
     public NoteSpawner mySpawner;
 
     // Controladores de tiempo para apagar el brillo
     private float[] colorResetTimers = new float[4];
+    private Vector3[] originalScales = new Vector3[4]; // Guardamos la escala original para el efecto pop
 
     private void Start()
     {
         // Forzamos a usar el componente del MISMO GameObject para evitar que el Jugador 2 lea al Spawner del Jugador 1
         mySpawner = GetComponent<NoteSpawner>();
+        
+        for (int i = 0; i < hitZoneRenderers.Length; i++)
+        {
+            if (hitZoneRenderers[i] != null)
+            {
+                originalScales[i] = hitZoneRenderers[i].transform.localScale;
+            }
+        }
     }
 
     private void Update()
     {
-        // 1. Manejar el reseteo del color visual de los HitZones
+        // 1. Manejar el reseteo del color visual y el tamao (efecto pop) de los HitZones
         for (int i = 0; i < 4; i++)
         {
-            if (colorResetTimers[i] > 0)
+            if (hitZoneRenderers[i] != null)
             {
-                colorResetTimers[i] -= Time.deltaTime;
-                if (colorResetTimers[i] <= 0 && i < hitZoneRenderers.Length && hitZoneRenderers[i] != null)
+                if (colorResetTimers[i] > 0)
                 {
-                    SetBoxColor(hitZoneRenderers[i], defaultColor);
+                    colorResetTimers[i] -= Time.deltaTime;
+                    if (colorResetTimers[i] <= 0)
+                    {
+                        SetBoxColor(hitZoneRenderers[i], defaultColor);
+                    }
                 }
+                
+                // Suavizado del tamao (Lerp) para volver a la escala normal rpidamente
+                hitZoneRenderers[i].transform.localScale = Vector3.Lerp(hitZoneRenderers[i].transform.localScale, originalScales[i], Time.deltaTime * 15f);
             }
         }
 
@@ -102,7 +118,7 @@ public class PlayerInputController : MonoBehaviour
         NoteObject closestNote = null;
         float closestDistance = float.MaxValue;
 
-        // Bucle súper rápido sin alojar memoria (cero lag)
+        // Bucle sper rpido sin alojar memoria (cero lag)
         foreach (NoteObject note in mySpawner.activeNotes)
         {
             if (note.laneID == pressedLaneID)
@@ -116,8 +132,7 @@ public class PlayerInputController : MonoBehaviour
             }
         }
 
-        // Evaluamos solo si la flecha ya está relativamente cerca de la caja (ej. a menos del 30% de distancia)
-        // Esto evita que presiones la tecla y el sistema intente golpear una flecha que apenas va naciendo arriba.
+        // Evaluamos solo si la flecha ya est relativamente cerca de la caja
         if (closestNote != null && closestDistance <= 0.3f)
         {
             HitResult result = RhythmManager.Instance.CheckHitResult();
@@ -136,7 +151,7 @@ public class PlayerInputController : MonoBehaviour
             }
             else
             {
-                Debug.Log($"[{playerName}] MISS (Cerca de la caja, pero fuera de ritmo). Rompió el combo.");
+                Debug.Log($"[{playerName}] MISS (Cerca de la caja, pero fuera de ritmo). Rompi el combo.");
                 combo = 0;
                 FlashHitZone(pressedLaneID, Color.red); // Flash ROJO para indicar el fallo
                 GameEvents.TriggerPlayerMiss(playerID);
@@ -145,7 +160,7 @@ public class PlayerInputController : MonoBehaviour
         else
         {
             combo = 0; // Spam = Pierde combo
-            FlashHitZone(pressedLaneID, Color.gray); // Flash GRIS para indicar que presionaste sin haber notas cerca
+            FlashHitZone(pressedLaneID, Color.gray); // Flash GRIS para indicar spam
             GameEvents.TriggerPlayerMiss(playerID);
         }
     }
@@ -154,10 +169,13 @@ public class PlayerInputController : MonoBehaviour
     {
         if (rend == null) return;
         
-        // Compatible con pipeline Clásico
+        if (rend is SpriteRenderer spriteRend)
+        {
+            spriteRend.color = color;
+            return;
+        }
+
         rend.material.color = color;
-        
-        // Compatible con Universal Render Pipeline (URP) y HDRP
         if (rend.material.HasProperty("_BaseColor"))
         {
             rend.material.SetColor("_BaseColor", color);
@@ -171,11 +189,14 @@ public class PlayerInputController : MonoBehaviour
             if (hitZoneRenderers[lane] != null)
             {
                 SetBoxColor(hitZoneRenderers[lane], color);
-                colorResetTimers[lane] = 0.15f; // Duración del destello (150ms)
+                colorResetTimers[lane] = 0.15f; // Duracin del destello (150ms)
+                
+                // Hacemos que el HitZone "salte" visualmente aumentando su escala
+                hitZoneRenderers[lane].transform.localScale = originalScales[lane] * popScaleMultiplier;
             }
             else
             {
-                Debug.LogWarning($"[Input] Presionaste el carril {lane}, pero no hay ningún Cubo asignado en el Inspector (Hit Zone Renderers Element {lane}).");
+                Debug.LogWarning($"[Input] Presionaste el carril {lane}, pero no hay ningn Cubo asignado en el Inspector.");
             }
         }
     }
