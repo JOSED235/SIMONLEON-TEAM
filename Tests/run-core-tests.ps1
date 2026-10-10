@@ -7,11 +7,13 @@ $sourceFiles = @(
     (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Core\GameConfig.cs"),
     (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Core\MatchManager.cs"),
     (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Gameplay\ComboSystem.cs"),
+    (Join-Path $repositoryRoot "Party Potato\Assets\Scripts\Gameplay\PowerUpManager.cs"),
     (Join-Path $PSScriptRoot "Core\UnityEngineStubs.cs"),
     (Join-Path $PSScriptRoot "Core\GameEnumsTests.cs"),
     (Join-Path $PSScriptRoot "Core\GameEventsTests.cs"),
     (Join-Path $PSScriptRoot "Core\MatchManagerTests.cs"),
-    (Join-Path $PSScriptRoot "Gameplay\ComboSystemTests.cs")
+    (Join-Path $PSScriptRoot "Gameplay\ComboSystemTests.cs"),
+    (Join-Path $PSScriptRoot "Gameplay\PowerUpManagerTests.cs")
 )
 
 foreach ($sourceFile in $sourceFiles) {
@@ -23,11 +25,12 @@ foreach ($sourceFile in $sourceFiles) {
 Add-Type -Path $sourceFiles -ErrorAction Stop
 
 try {
-    $enumTests  = [GameEnumsTests]::RunAll()
-    $eventTests = [GameEventsTests]::RunAll()
-    $matchTests = [MatchManagerTests]::RunAll()
-    $comboTests = [ComboSystemTests]::RunAll()
-    $total = $enumTests + $eventTests + $matchTests + $comboTests
+    $enumTests    = [GameEnumsTests]::RunAll()
+    $eventTests   = [GameEventsTests]::RunAll()
+    $matchTests   = [MatchManagerTests]::RunAll()
+    $comboTests   = [ComboSystemTests]::RunAll()
+    $powerTests   = [PowerUpManagerTests]::RunAll()
+    $total = $enumTests + $eventTests + $matchTests + $comboTests + $powerTests
     Write-Output "PASS: $total core tests completed."
 }
 catch {

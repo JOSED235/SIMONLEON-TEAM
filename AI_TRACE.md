@@ -112,3 +112,16 @@
 - Resumen: ComboSystem escucha `OnHitResolved`, `OnPlayerMiss`, `OnNoteMiss` y `OnRoundStarted`. Mantiene rachas independientes para P1 y P2. Al alcanzar `config.streakThresholdForPower` aciertos consecutivos emite `OnPowerUnlocked` una sola vez (maxima una carga activa). Cualquier miss reinicia la racha del jugador y emite `OnStreakReset` solo si la racha no era ya 0. Al iniciar una nueva ronda, ambas rachas y cargas se reinician. Expone `ConsumePower()` para que PowerUpManager consuma la carga al activar un poder. Suite de 18 tests; total acumulado: 53/53 tests pasando.
 - Limitaciones: El tipo de poder emitido en `OnPowerUnlocked` es `PowerType.None`; PowerUpManager debera determinar que poder otorgar segun la logica del GDD.
 
+
+## 2026-10-10 - Creacion de PowerUpManager
+- Participante: Jose David Rodriguez Pinilla
+- Tarea: Crear `PowerUpManager.cs` con validacion de carga, activacion, temporizador y expiracion de poderes.
+- Archivos creados:
+  - `Party Potato/Assets/Scripts/Gameplay/PowerUpManager.cs`
+  - `Tests/Gameplay/PowerUpManagerTests.cs`
+- Archivos modificados:
+  - `Tests/run-core-tests.ps1` (agregados PowerUpManager.cs y PowerUpManagerTests.cs)
+  - `Docs/Division de responsabilidades - Backend.md` (marcado PowerUpManager como COMPLETADO)
+- Resumen: PowerUpManager valida carga disponible via ComboSystem.PowerReady1/2, consume la carga con ConsumePower(), emite OnPowerActivated al activar y OnPowerExpired al expirar (via corrutina WaitForSeconds). Un jugador solo puede tener un poder activo a la vez. HandleRoundStarted cancela poderes activos emitiendo OnPowerExpired. Los efectos concretos sobre notas (velocidad, invisibilidad, ventana electrica) son delegados a NoteSpawner/NoteObject via los eventos del bus. Soporta los 4 tipos del GDD con duraciones desde GameConfig. 12 tests nuevos; total acumulado: 65/65 PASS.
+- Limitaciones: La duracion de Papa Cohete usa un proxy en segundos (rocketDurationMeasures * 2f) porque el tempo real depende de RhythmManager que aun no esta integrado. El tipo de poder asignado al desbloquear es RocketPotato por defecto; la seleccion dinamica de poder debera coordinarse con Felipe segun el GDD.
+
