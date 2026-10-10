@@ -5,7 +5,7 @@ public static class GameEnumsTests
     public static int RunAll()
     {
         AssertEnumValues(typeof(PlayerID), new[] { "None=0", "Player1=1", "Player2=2" });
-        AssertEnumValues(typeof(HitResult), new[] { "Miss=0", "Good=1", "Great=2", "Perfect=3" });
+        AssertEnumValues(typeof(HitResult), new[] { "Miss=0", "Great=1", "Good=2", "Perfect=3" });
         AssertEnumValues(typeof(LaneDirection), new[] { "Left=0", "Down=1", "Up=2", "Right=3" });
         AssertEnumValues(typeof(GameMode), new[] { "LocalPVP=0", "SoloVsCPU=1" });
         AssertEnumValues(typeof(AIDifficulty), new[] { "Easy=0", "Normal=1", "Hard=2" });

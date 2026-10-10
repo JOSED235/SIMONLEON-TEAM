@@ -60,9 +60,9 @@ public class HotPotatoPressureMeter : MonoBehaviour
             switch (result)
             {
                 case HitResult.Perfect: currentPressure -= perfectReduction; break;
-                case HitResult.Good: currentPressure -= goodReduction; break;
-                case HitResult.Bad: currentPressure += badIncrease; break;
-                case HitResult.Miss: currentPressure += missIncrease; break;
+                case HitResult.Great:   currentPressure -= goodReduction; break;
+                case HitResult.Good:    break; // Sin efecto en presion
+                case HitResult.Miss:    currentPressure += missIncrease; break;
             }
         }
         else

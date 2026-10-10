@@ -17,9 +17,9 @@ public enum PlayerID
 public enum HitResult
 {
     Miss = 0,      // Fuera de ventana (>±150 ms) o nota no pulsada
-    Bad = 1,       // Golpe pobre dentro de ventana marginal
-    Good = 2,      // Golpe acertado dentro de margen amplio
-    Perfect = 3    // Golpe exacto dentro de máxima precisión
+    Great = 1,     // Golpe bueno dentro del margen amplio (±100 ms)
+    Good = 2,      // Golpe aceptable dentro del margen máximo (±150 ms)
+    Perfect = 3    // Golpe exacto dentro de máxima precisión (±50 ms)
 }
 
 /// <summary>
