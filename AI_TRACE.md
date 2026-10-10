@@ -128,3 +128,9 @@
 - Resumen: ComboSystem escucha `OnHitResolved`, `OnPlayerMiss`, `OnNoteMiss` y `OnRoundStarted`. Mantiene rachas independientes para P1 y P2. Al alcanzar `config.streakThresholdForPower` aciertos consecutivos emite `OnPowerUnlocked` una sola vez (maxima una carga activa). Cualquier miss reinicia la racha del jugador y emite `OnStreakReset` solo si la racha no era ya 0. Al iniciar una nueva ronda, ambas rachas y cargas se reinician. Expone `ConsumePower()` para que PowerUpManager consuma la carga al activar un poder. Suite de 18 tests; total acumulado: 53/53 tests pasando.
 - Limitaciones: El tipo de poder emitido en `OnPowerUnlocked` es `PowerType.None`; PowerUpManager debera determinar que poder otorgar segun la logica del GDD.
 
+
+## 2026-10-10 - Interfaz de Presion (Slider UI)
+- Participante: Faiber Piedrahita
+- Tarea: Crear representacion visual del medidor de presion de la papa mediante un Slider de Unity.
+- Archivos creados: Party Potato/Assets/Scripts/Minigame/PressureMeterUI.cs
+- Resumen: Se implemento un script que lee el currentPressure del HotPotatoPressureMeter y suaviza el movimiento de un Slider en la UI (Lerp), ademas de interpolar el color de amarillo a rojo segun el riesgo de explosion.
