@@ -52,10 +52,10 @@ public class PlayerInputController : MonoBehaviour
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null)
         {
-            if (Keyboard.current.leftArrowKey.wasPressedThisFrame)  ProcessInputForLane(0);
-            if (Keyboard.current.downArrowKey.wasPressedThisFrame)  ProcessInputForLane(1);
-            if (Keyboard.current.upArrowKey.wasPressedThisFrame)    ProcessInputForLane(2);
-            if (Keyboard.current.rightArrowKey.wasPressedThisFrame) ProcessInputForLane(3);
+            if (IsKeyPressed(keyLeft))  ProcessInputForLane(0);
+            if (IsKeyPressed(keyDown))  ProcessInputForLane(1);
+            if (IsKeyPressed(keyUp))    ProcessInputForLane(2);
+            if (IsKeyPressed(keyRight)) ProcessInputForLane(3);
         }
 #else
         if (Input.GetKeyDown(keyLeft))  ProcessInputForLane(0);
@@ -64,6 +64,25 @@ public class PlayerInputController : MonoBehaviour
         if (Input.GetKeyDown(keyRight)) ProcessInputForLane(3);
 #endif
     }
+
+#if ENABLE_INPUT_SYSTEM
+    private bool IsKeyPressed(KeyCode code)
+    {
+        if (Keyboard.current == null) return false;
+        switch (code)
+        {
+            case KeyCode.LeftArrow: return Keyboard.current.leftArrowKey.wasPressedThisFrame;
+            case KeyCode.DownArrow: return Keyboard.current.downArrowKey.wasPressedThisFrame;
+            case KeyCode.UpArrow: return Keyboard.current.upArrowKey.wasPressedThisFrame;
+            case KeyCode.RightArrow: return Keyboard.current.rightArrowKey.wasPressedThisFrame;
+            case KeyCode.W: return Keyboard.current.wKey.wasPressedThisFrame;
+            case KeyCode.A: return Keyboard.current.aKey.wasPressedThisFrame;
+            case KeyCode.S: return Keyboard.current.sKey.wasPressedThisFrame;
+            case KeyCode.D: return Keyboard.current.dKey.wasPressedThisFrame;
+            default: return false;
+        }
+    }
+#endif
 
     private void ProcessInputForLane(int pressedLaneID)
     {
