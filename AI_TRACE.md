@@ -331,3 +331,9 @@
   - `Party Potato/Assets/Scripts/Minigame/BombController.cs`
 - Resumen: Se finalizó el backend integrando la respuesta visual y sonora a los eventos de juego. `GameUI` reacciona a aciertos, rachas y presión; `VictoryScreen` maneja el estado de fin de partida escuchando `OnMatchStateChanged`; `SfxPlayer` dispara sonidos para eventos de acierto, explosión y poder; `BombController` se actualizó para reaccionar al calor actual y emitir señales de explosión. Con estos elementos, el backend en C# queda completamente terminado y delegable al integrador de Unity.
 - Limitaciones: Falta conectar las referencias en el Inspector de Unity (Textos, Botones, AudioSources) y desactivar los scripts legacy (PlayerInputController, HotPotatoPressureMeter) en la escena principal.
+
+## 2026-10-10 - Correccion de Error CS0117 (PowerType)
+- Participante: Faiber Piedrahita
+- Tarea: Corregir error de compilacion CS0117 en PotatoHeatSystem.cs provocado por un cambio reciente de otro companero.
+- Archivos modificados: Party Potato/Assets/Scripts/Gameplay/PotatoHeatSystem.cs
+- Resumen: Se cambio la referencia incorrecta PowerType.Freeze a su nombre real declarado en los enums PowerType.FreezePotato para corregir la compilacion y reconectar correctamente la logica de enfriamiento de la Papa Helada (reduccion del 40% de calor segun GDD).

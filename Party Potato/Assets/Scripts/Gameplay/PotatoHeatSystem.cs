@@ -107,7 +107,7 @@ public class PotatoHeatSystem : MonoBehaviour
         if (hasExploded) return;
 
         // Segn GDD: Papa Helada reduce el calor del jugador que la activa en 40%
-        if (power == PowerType.Freeze)
+        if (power == PowerType.FreezePotato)
         {
             float reduction = (config != null) ? config.freezePotatoHeatReduction : 0.40f;
             ModifyHeat(player, -reduction);
