@@ -92,3 +92,8 @@
 - Tarea: Resolver conflictos de merge entre la rama actual y develop.
 - Archivos modificados: AI_TRACE.md
 - Resumen: Se integraron las viñetas del pivot de minijuego (HEAD) con los registros de arquitectura y pruebas (develop), manteniendo ambos.
+
+## 2026-10-10 - Rollback de Arquitectura
+- Tarea: Revertir el proyecto al commit 16c4842 (estado antes de la reorganización y PotatoHeatSystem).
+- Archivos modificados: Todo el proyecto (Rollback), excluyendo AI_TRACE.md para preservar la integridad del registro.
+- Resumen: El usuario decidió descartar los cambios arquitectónicos recientes para abordar la configuración del Jugador 2 desde un estado estable previo.
