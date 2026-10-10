@@ -139,4 +139,22 @@
 - Pruebas realizadas: 25 pruebas de ritmo y entrada (`run-rhythm-tests.ps1`) + 35 de Core (`run-core-tests.ps1`) = 60 pruebas unitarias aprobadas al 100%.
 - Limitaciones: Falta implementar `AIController.cs` (Punto 5 del backend). La integracion visual (animaciones, prefabs, HitFeedbackUI) corresponde al responsable de Unity.
 
+## 2026-10-10 - Implementacion de AIController para Modo Solo vs CPU
+
+- Participante: Felipe Calderon
+- Tarea: Implementar AIController.cs (Punto 5 de la division de responsabilidades del backend).
+- Archivos creados/modificados:
+  - `Party Potato/Assets/Scripts/Gameplay/AIController.cs` (creado)
+  - `Party Potato/Assets/Scripts/Gameplay/AIController.cs.meta` (creado)
+  - `Tests/Rhythm/AIControllerTests.cs` (creado)
+  - `Tests/run-rhythm-tests.ps1` (modificado)
+- Resumen:
+  - Se creo `AIController.cs` en `Gameplay/` para operar como rival virtual en el modo Solo vs CPU (por defecto Jugador 2), sincronizado con `RhythmManager.dspTime` y `songPositionInBeats`.
+  - Se calibraron las distribuciones de probabilidad y precision segun las especificaciones del GDD para cada dificultad: Facil (~70% precision, predominan Good y fallos frecuentes), Normal (~85% precision, combinacion de Great y Perfect) y Dificil (~96% precision, altas rachas y fallos minimos).
+  - La IA procesa y resuelve las notas mediante el mismo flujo compartido que el jugador humano (`NoteObject.EvaluateAndResolve`), garantizando consumo unico y emision uniforme de eventos en `GameEvents` sin duplicar el motor de notas ni la logica de puntuacion.
+  - Se incorporo la activacion automatica de poderes acumulados con retrasos escalonados por dificultad (Dificil 0.25 beats, Normal 2.0 beats, Facil 4.0 beats), junto con deteccion de sabotaje por Papa Electrica y reinicio de estado al inicio de ronda.
+  - Se implementaron 7 pruebas unitarias automatizadas en `Tests/Rhythm/AIControllerTests.cs` validando distribucion de probabilidades, filtrado de notas por PlayerID, flujo de evaluacion compartido, auto-miss en fallos, ciclo de poderes, reaccion a sabotajes y limpieza en nuevas rondas.
+- Pruebas realizadas: 32 pruebas de ritmo, entrada e IA (`run-rhythm-tests.ps1`) + 35 de Core (`run-core-tests.ps1`) = 67 pruebas aprobadas al 100%.
+- Limitaciones: La conexion del componente en el Inspector de Unity dentro de `Main.unity` y la seleccion de dificultad desde la pantalla de menu corresponden al responsable del Editor.
+
 
