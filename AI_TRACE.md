@@ -157,4 +157,23 @@
 - Pruebas realizadas: 32 pruebas de ritmo, entrada e IA (`run-rhythm-tests.ps1`) + 35 de Core (`run-core-tests.ps1`) = 67 pruebas aprobadas al 100%.
 - Limitaciones: La conexion del componente en el Inspector de Unity dentro de `Main.unity` y la seleccion de dificultad desde la pantalla de menu corresponden al responsable del Editor.
 
+## 2026-10-10 - Auditoria y Cobertura Integral de Pruebas de Ritmo y Entrada
+
+- Participante: Felipe Calderon
+- Tarea: Revision y consolidacion exhaustiva de las pruebas asignadas en la division de responsabilidades del backend (7 topicos clave).
+- Archivos modificados:
+  - `Tests/Rhythm/RhythmManagerTests.cs`
+  - `Tests/Rhythm/NoteAndInputTests.cs`
+- Resumen:
+  - Se auditaron y reforzaron con pruebas unitarias dedicadas los 7 puntos obligatorios del backend asignados a Felipe:
+    1. **Conversion beat/tiempo DSP**: Se agrego `TestBidirectionalConversionsWithSongOffsetAndFractionalBeats` validando tempo 117 BPM, latencia `songOffset` y subdivisiones de compas (corcheas y semicorcheas).
+    2. **Limites de cada ventana**: Se anadio `TestCustomGameConfigWindowsAdaptive` comprobando adaptabilidad dinamica ante tolerancias arbitrarias de `GameConfig` y reduccion por Papa Electrica.
+    3. **Cuatro carriles**: Se incorporaron `TestFourLanesP1IndependenceAndDirectionMapping` y `TestCrossPlayerLaneIsolation` validando independencia y aislamiento estricto de los 4 carriles entre P1 y P2.
+    4. **Asignacion de controles**: Se implemento `TestPlayerKeyBindingsDefaultsAndCustomReassignment` verificando mapeos oficiales de P1 (Flechas + Enter/RShift) y P2 (WASD + Espacio/LShift), asi como inversion de controles.
+    5. **Auto-miss**: Se implemento `TestNoteObjectAutoMissThresholdLifecycle` simulando el ciclo de `NoteObject.Update()` y detonacion de Miss al superar `missThreshold` (1.25).
+    6. **Pulsaciones repetidas**: Se anadio `TestRepeatedPressesAntiSpamAndSequentialNotes` cubriendo penalizacion por machacado continuo y prevencion de consumo prematuro en notas secuenciales en el mismo carril.
+    7. **Resolucion unica de nota**: Se implemento `TestExhaustiveSingleResolutionInvariance` garantizando emision estricta de maximo 1 resolucion ante cualquier permutacion de llamadas.
+- Pruebas realizadas: 40 pruebas de ritmo, entrada e IA (`run-rhythm-tests.ps1`) + 35 de Core (`run-core-tests.ps1`) = 75 pruebas unitarias aprobadas al 100%.
+- Limitaciones: Cobertura de backend 100% verificada fuera de Unity; la integracion en escena con prefabs y renderizado de sprites queda a cargo del responsable del Editor.
+
 

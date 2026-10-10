@@ -318,6 +318,79 @@ public static class RhythmManagerTests
         Console.WriteLine("[PASS] RhythmManager: Sobrecarga EvaluateNote con NoteObject");
     }
 
+    /// <summary>
+    /// Verifica las conversiones bidireccionales Beat <-> DSP bajo el tempo oficial de 117 BPM,
+    /// con desfase de latencia calibrada (songOffset) y fracciones de beat (corcheas, semicorcheas).
+    /// </summary>
+    public static void TestBidirectionalConversionsWithSongOffsetAndFractionalBeats()
+    {
+        RhythmManager rm = CreateTestInstance(117f);
+        rm.songOffset = 0.045f; // 45ms de calibracion de latencia
+        double scheduledStart = 300.0;
+        rm.StartTrack(scheduledStart);
+
+        float secPerBeat = rm.secPerBeat; // 60 / 117 = 0.51282s
+
+        // Beat 0: dspStartTime + songOffset
+        double dspBeat0 = rm.BeatToDspTime(0f);
+        AssertApproximatelyDouble(dspBeat0, 300.045, 0.0001, "Beat 0 debe incorporar songOffset exacto");
+        AssertApproximately(rm.DspTimeToBeat(dspBeat0), 0f, 0.001f, "DSP de Beat 0 debe revertir a 0f");
+
+        // Beat 2.5 (corchea en el compas): 2.5 * secPerBeat
+        double dspBeat2_5 = rm.BeatToDspTime(2.5f);
+        double expectedDsp = 300.045 + (2.5f * secPerBeat);
+        AssertApproximatelyDouble(dspBeat2_5, expectedDsp, 0.0001, "Beat 2.5 debe calcular DSP con precision double");
+        AssertApproximately(rm.DspTimeToBeat(dspBeat2_5), 2.5f, 0.001f, "DSP fraccionario debe revertir a Beat 2.5");
+
+        // Beat 8.75 (semicorchea)
+        double dspBeat8_75 = rm.BeatToDspTime(8.75f);
+        AssertApproximately(rm.DspTimeToBeat(dspBeat8_75), 8.75f, 0.001f, "Beat 8.75 debe revertir exactamente");
+
+        // Posicion en cancion independiente de DSP
+        float songPosBeat4 = rm.BeatToSongPosition(4f);
+        AssertApproximately(songPosBeat4, 4f * secPerBeat, 0.0001f, "BeatToSongPosition debe ser 4 * secPerBeat");
+        AssertApproximately(rm.SongPositionToBeat(songPosBeat4), 4f, 0.001f, "SongPositionToBeat debe revertir a Beat 4");
+
+        Console.WriteLine("[PASS] RhythmManager: Conversiones con BPM 117, latencia songOffset y fracciones de beat");
+    }
+
+    /// <summary>
+    /// Verifica que la evaluacion temporal se adapta dinamicamente si GameConfig define tolerancias personalizadas,
+    /// sin depender de valores fijos en el codigo fuente.
+    /// </summary>
+    public static void TestCustomGameConfigWindowsAdaptive()
+    {
+        RhythmManager rm = CreateTestInstance(120f);
+        rm.gameConfig.perfectTolerance = 0.04f; // 40ms
+        rm.gameConfig.greatTolerance   = 0.08f; // 80ms
+        rm.gameConfig.goodTolerance    = 0.12f; // 120ms
+        rm.gameConfig.electricPerfectTolerance = 0.02f; // 20ms
+
+        float acc;
+
+        // 35ms: con tolerancia 40ms es Perfect
+        HitResult r1 = rm.ClassifyTimeDifference(0.035f, out acc, false);
+        Assert(r1 == HitResult.Perfect, "35ms con tolerancia 40ms debe ser Perfect");
+
+        // 45ms: mayor a 40ms y menor a 80ms -> Great
+        HitResult r2 = rm.ClassifyTimeDifference(0.045f, out acc, false);
+        Assert(r2 == HitResult.Great, "45ms con tolerancia custom 40/80ms debe ser Great");
+
+        // 90ms: mayor a 80ms y menor a 120ms -> Good
+        HitResult r3 = rm.ClassifyTimeDifference(0.090f, out acc, false);
+        Assert(r3 == HitResult.Good, "90ms con tolerancia custom 80/120ms debe ser Good");
+
+        // 125ms: mayor a 120ms -> Miss
+        HitResult r4 = rm.ClassifyTimeDifference(0.125f, out acc, false);
+        Assert(r4 == HitResult.Miss, "125ms con tolerancia custom 120ms debe ser Miss");
+
+        // Papa Electrica con tolerancia custom (20ms): 25ms debe degradarse a Great
+        HitResult rElec = rm.ClassifyTimeDifference(0.025f, out acc, true);
+        Assert(rElec == HitResult.Great, "25ms bajo Papa Electrica custom (20ms) debe ser Great");
+
+        Console.WriteLine("[PASS] RhythmManager: Adaptabilidad dinamica ante tolerancias custom de GameConfig");
+    }
+
     private static void SetRhythmTime(RhythmManager rm, double currentDsp)
     {
         // Usa reflection para actualizar los campos privados de calculo de Update
@@ -342,6 +415,8 @@ public static class RhythmManagerTests
         TestNoteEvaluationSymmetryEarlyAndLate();
         TestNoteEvaluationFullResultAndScore();
         TestEvaluateNoteHelper();
-        return 9;
+        TestBidirectionalConversionsWithSongOffsetAndFractionalBeats();
+        TestCustomGameConfigWindowsAdaptive();
+        return 11;
     }
 }

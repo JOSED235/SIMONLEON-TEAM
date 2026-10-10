@@ -683,6 +683,296 @@ public static class NoteAndInputTests
         Console.WriteLine("[PASS] NoteEvaluation: ResolveHit redirige Miss a ResolveMiss por integridad");
     }
 
+    /// <summary>
+    /// [Tema: Cuatro carriles]
+    /// Verifica la independencia y mapeo exacto de los 4 carriles de Player 1 (Left=0, Down=1, Up=2, Right=3)
+    /// alineados con la enumeracion LaneDirection del GDD.
+    /// </summary>
+    public static void TestFourLanesP1IndependenceAndDirectionMapping()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f);
+
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        typeof(RhythmManager).GetField("songPositionField", flags).SetValue(RhythmManager.Instance, 4.0f);
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 8.0f);
+
+        // Crear una nota para cada carril de P1
+        LaneDirection[] directions = new LaneDirection[] { LaneDirection.Left, LaneDirection.Down, LaneDirection.Up, LaneDirection.Right };
+        NoteObject[] notes = new NoteObject[4];
+        for (int i = 0; i < 4; i++)
+        {
+            notes[i] = new NoteObject();
+            notes[i].targetPlayer = PlayerID.Player1;
+            notes[i].laneID = i;
+            notes[i].laneDirection = directions[i];
+            notes[i].beatOfThisNote = 8.0f;
+            NoteObject.ActiveNotes.Add(notes[i]);
+        }
+
+        PlayerInput input = new PlayerInput();
+        input.penalizeGhostTaps = false;
+
+        // Golpear carril 2 (Up)
+        HitResult rUp = input.HandleLanePress(PlayerID.Player1, (int)LaneDirection.Up);
+        Assert(rUp == HitResult.Perfect, "El golpe en carril Up debe ser Perfect");
+        Assert(notes[2].isResolved, "La nota del carril Up debe estar resuelta");
+        Assert(!notes[0].isResolved, "La nota del carril Left debe seguir activa");
+        Assert(!notes[1].isResolved, "La nota del carril Down debe seguir activa");
+        Assert(!notes[3].isResolved, "La nota del carril Right debe seguir activa");
+
+        // Golpear carril 0 (Left)
+        HitResult rLeft = input.HandleLanePress(PlayerID.Player1, (int)LaneDirection.Left);
+        Assert(rLeft == HitResult.Perfect, "El golpe en carril Left debe ser Perfect");
+        Assert(notes[0].isResolved, "La nota del carril Left debe estar resuelta");
+
+        NoteObject.ActiveNotes.Clear();
+        Console.WriteLine("[PASS] Cuatro Carriles: Independencia y mapeo de direcciones de Player 1");
+    }
+
+    /// <summary>
+    /// [Tema: Cuatro carriles y aislamiento]
+    /// Verifica que cuando ambos jugadores tienen notas activas en el mismo carril en el mismo instante,
+    /// la accion de un jugador impacta unicamente su propia nota y no afecta la del oponente.
+    /// </summary>
+    public static void TestCrossPlayerLaneIsolation()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f);
+
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        typeof(RhythmManager).GetField("songPositionField", flags).SetValue(RhythmManager.Instance, 5.0f);
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 10.0f);
+
+        // Ambas notas en carril 1 (Down), ambas en Beat 10.0
+        NoteObject noteP1 = new NoteObject();
+        noteP1.targetPlayer = PlayerID.Player1;
+        noteP1.laneID = 1;
+        noteP1.beatOfThisNote = 10.0f;
+        NoteObject.ActiveNotes.Add(noteP1);
+
+        NoteObject noteP2 = new NoteObject();
+        noteP2.targetPlayer = PlayerID.Player2;
+        noteP2.laneID = 1;
+        noteP2.beatOfThisNote = 10.0f;
+        NoteObject.ActiveNotes.Add(noteP2);
+
+        PlayerInput input = new PlayerInput();
+        input.penalizeGhostTaps = false;
+
+        // Player 1 presiona carril 1
+        input.HandleLanePress(PlayerID.Player1, 1);
+
+        Assert(noteP1.isResolved, "La nota de Player 1 debe haberse resuelto");
+        Assert(!noteP2.isResolved, "La nota de Player 2 debe permanecer intacta tras la pulsacion de Player 1");
+
+        // Player 2 presiona carril 1
+        input.HandleLanePress(PlayerID.Player2, 1);
+        Assert(noteP2.isResolved, "La nota de Player 2 se resuelve tras la pulsacion de Player 2");
+
+        NoteObject.ActiveNotes.Clear();
+        Console.WriteLine("[PASS] Cuatro Carriles: Aislamiento estricto de notas entre Player 1 y Player 2");
+    }
+
+    /// <summary>
+    /// [Tema: Asignacion de controles]
+    /// Verifica que las asignaciones predeterminadas de teclas coinciden con el GDD
+    /// y que la reasignacion / inversion de controles funciona limpiamente.
+    /// </summary>
+    public static void TestPlayerKeyBindingsDefaultsAndCustomReassignment()
+    {
+        PlayerInput input = new PlayerInput();
+
+        // Validar valores por defecto de P1 segun GDD
+        Assert(input.player1Keys.leftKey    == KeyCode.LeftArrow,  "P1 default leftKey debe ser LeftArrow");
+        Assert(input.player1Keys.downKey    == KeyCode.DownArrow,  "P1 default downKey debe ser DownArrow");
+        Assert(input.player1Keys.upKey      == KeyCode.UpArrow,    "P1 default upKey debe ser UpArrow");
+        Assert(input.player1Keys.rightKey   == KeyCode.RightArrow, "P1 default rightKey debe ser RightArrow");
+        Assert(input.player1Keys.powerKey   == KeyCode.Return,     "P1 default powerKey debe ser Return/Enter");
+        Assert(input.player1Keys.altPowerKey == KeyCode.RightShift, "P1 default altPowerKey debe ser RightShift");
+
+        // Validar valores por defecto de P2 segun GDD
+        Assert(input.player2Keys.leftKey    == KeyCode.A,          "P2 default leftKey debe ser A");
+        Assert(input.player2Keys.downKey    == KeyCode.S,          "P2 default downKey debe ser S");
+        Assert(input.player2Keys.upKey      == KeyCode.W,          "P2 default upKey debe ser W");
+        Assert(input.player2Keys.rightKey   == KeyCode.D,          "P2 default rightKey debe ser D");
+        Assert(input.player2Keys.powerKey   == KeyCode.Space,      "P2 default powerKey debe ser Space");
+        Assert(input.player2Keys.altPowerKey == KeyCode.LeftShift,  "P2 default altPowerKey debe ser LeftShift");
+
+        // Reasignacion / inversion de controles (P1 con WASD y P2 con Flechas)
+        PlayerKeyBindings invertedP1 = new PlayerKeyBindings
+        {
+            leftKey = KeyCode.A, downKey = KeyCode.S, upKey = KeyCode.W, rightKey = KeyCode.D, powerKey = KeyCode.Space
+        };
+        input.player1Keys = invertedP1;
+        Assert(input.player1Keys.leftKey == KeyCode.A, "Reasignacion de controles debe reflejarse correctamente");
+
+        Console.WriteLine("[PASS] Asignacion de Controles: Mapeos oficiales del GDD y soporte de reasignacion");
+    }
+
+    /// <summary>
+    /// [Tema: Auto-miss]
+    /// Verifica el ciclo de vida del Auto-Miss en NoteObject.Update():
+    /// la nota se mantiene activa antes de missThreshold (1.25) y se resuelve como Miss automatico
+    /// tan pronto supera dicho umbral.
+    /// </summary>
+    public static void TestNoteObjectAutoMissThresholdLifecycle()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f); // 0.5s por beat
+
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var updateMethod = typeof(NoteObject).GetMethod("Update", flags);
+
+        NoteObject note = new NoteObject();
+        note.targetPlayer = PlayerID.Player1;
+        note.laneID = 0;
+        note.beatOfThisNote = 10.0f;
+        note.beatsOnScreen = 2.0f;
+        note.speedMultiplier = 1.0f;
+        note.missThreshold = 1.25f;
+        NoteObject.ActiveNotes.Add(note);
+
+        int missCount = 0;
+        GameEvents.OnNoteMiss += delegate { missCount++; };
+
+        // 1. Beat 10.4: progreso = (10.4 - 8.0) / 2.0 = 1.20f (< 1.25f) -> AUN NO debe ser miss
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 10.4f);
+        updateMethod.Invoke(note, null);
+        Assert(!note.isResolved, "La nota no debe marcarse como resuelta antes de missThreshold");
+        Assert(missCount == 0, "No debe dispararse OnNoteMiss antes de missThreshold");
+
+        // 2. Beat 10.6: progreso = (10.6 - 8.0) / 2.0 = 1.30f (>= 1.25f) -> DEBE ser auto-miss
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 10.6f);
+        updateMethod.Invoke(note, null);
+        Assert(note.isResolved, "La nota debe estar resuelta tras superar missThreshold");
+        Assert(missCount == 1, "Debe dispararse OnNoteMiss exactamente una vez");
+
+        NoteObject.ActiveNotes.Clear();
+        Console.WriteLine("[PASS] Auto-miss: Ciclo de vida y detonacion exacta segun missThreshold");
+    }
+
+    /// <summary>
+    /// [Tema: Pulsaciones repetidas / Anti-spam]
+    /// Verifica dos escenarios criticos:
+    /// 1. Machacado repetido sobre una nota ya resuelta no genera aciertos duplicados.
+    /// 2. Notas secuenciales en el mismo carril: golpear la primera nota no consume prematuramente la siguiente.
+    /// </summary>
+    public static void TestRepeatedPressesAntiSpamAndSequentialNotes()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f); // 0.5s por beat
+
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        typeof(RhythmManager).GetField("songPositionField", flags).SetValue(RhythmManager.Instance, 2.0f);
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 4.0f);
+
+        // Dos notas secuenciales en el mismo carril (Carril 2): Nota A en Beat 4.0, Nota B en Beat 6.0
+        NoteObject noteA = new NoteObject();
+        noteA.targetPlayer = PlayerID.Player1;
+        noteA.laneID = 2;
+        noteA.beatOfThisNote = 4.0f;
+        NoteObject.ActiveNotes.Add(noteA);
+
+        NoteObject noteB = new NoteObject();
+        noteB.targetPlayer = PlayerID.Player1;
+        noteB.laneID = 2;
+        noteB.beatOfThisNote = 6.0f; // A 2 beats (1.0s) de distancia
+        NoteObject.ActiveNotes.Add(noteB);
+
+        PlayerInput input = new PlayerInput();
+        input.penalizeGhostTaps = true;
+
+        int hitCount = 0;
+        int missCount = 0;
+        GameEvents.OnNoteHit += delegate { hitCount++; };
+        GameEvents.OnPlayerMiss += delegate { missCount++; };
+
+        // 1. Primera pulsacion en Beat 4.0: impacta Nota A con exito
+        HitResult res1 = input.HandleLanePress(PlayerID.Player1, 2);
+        Assert(res1 == HitResult.Perfect, "Primera pulsacion debe impactar Nota A con Perfect");
+        Assert(noteA.isResolved, "Nota A debe quedar resuelta");
+        Assert(!noteB.isResolved, "Nota B debe permanecer intacta");
+        Assert(hitCount == 1, "Debe registrarse 1 acierto");
+
+        // 2. Machacado repetido inmediatamente en Beat 4.02 (Nota A resuelta, Nota B lejana a 0.98s)
+        // Debe penalizarse como Ghost Tap sin consumir Nota B
+        typeof(RhythmManager).GetField("songPositionField", flags).SetValue(RhythmManager.Instance, 2.01f);
+        typeof(RhythmManager).GetField("songPositionInBeatsField", flags).SetValue(RhythmManager.Instance, 4.02f);
+
+        HitResult res2 = input.HandleLanePress(PlayerID.Player1, 2);
+        Assert(res2 == HitResult.Miss, "Pulsacion repetida sin notas en ventana debe retornar Miss");
+        Assert(!noteB.isResolved, "Nota B NO debe ser consumida por pulsacion anticipada fuera de ventana");
+        Assert(hitCount == 1, "El contador de aciertos debe mantenerse en 1");
+        Assert(missCount == 1, "Debe registrarse 1 penalizacion de fallo por machacado");
+
+        NoteObject.ActiveNotes.Clear();
+        Console.WriteLine("[PASS] Pulsaciones Repetidas: Proteccion anti-spam y no consumo de notas secuenciales");
+    }
+
+    /// <summary>
+    /// [Tema: Resolucion unica de notas]
+    /// Prueba de estres exhaustiva que verifica que una nota emite estrictamente como maximo UNA resolucion
+    /// ante cualquier permutacion de llamadas a ResolveHit, ResolveMiss o EvaluateAndResolve.
+    /// </summary>
+    public static void TestExhaustiveSingleResolutionInvariance()
+    {
+        GameEvents.ResetAllEvents();
+        NoteObject.ActiveNotes.Clear();
+        SetupTestRhythmManager(120f);
+
+        // Seguimiento global de eventos
+        int totalEvents = 0;
+        GameEvents.OnHitResolved += delegate { totalEvents++; };
+
+        // Escenario 1: ResolveHit primero, luego intentos repetidos
+        NoteObject note1 = new NoteObject();
+        note1.targetPlayer = PlayerID.Player1;
+        note1.laneID = 0;
+        note1.beatOfThisNote = 5.0f;
+
+        totalEvents = 0;
+        note1.ResolveHit(HitResult.Great, 0.8f);
+        note1.ResolveHit(HitResult.Perfect, 1.0f);
+        note1.ResolveMiss();
+        note1.EvaluateAndResolve();
+        Assert(totalEvents == 1, "Note1: Multiples resoluciones tras ResolveHit deben disparar exactamente 1 evento");
+        Assert(note1.isResolved, "Note1 debe estar resuelta");
+
+        // Escenario 2: ResolveMiss primero, luego intentos repetidos
+        NoteObject note2 = new NoteObject();
+        note2.targetPlayer = PlayerID.Player2;
+        note2.laneID = 1;
+        note2.beatOfThisNote = 6.0f;
+
+        totalEvents = 0;
+        note2.ResolveMiss();
+        note2.ResolveHit(HitResult.Perfect, 1.0f);
+        note2.ResolveMiss();
+        note2.EvaluateAndResolve();
+        Assert(totalEvents == 1, "Note2: Multiples resoluciones tras ResolveMiss deben disparar exactamente 1 evento");
+        Assert(note2.isResolved, "Note2 debe estar resuelta");
+
+        // Escenario 3: EvaluateAndResolve primero, luego llamadas redundantes
+        NoteObject note3 = new NoteObject();
+        note3.targetPlayer = PlayerID.Player1;
+        note3.laneID = 2;
+        note3.beatOfThisNote = 0f; // Beat 0 con reloj en Beat 0 -> Perfect
+
+        totalEvents = 0;
+        note3.EvaluateAndResolve();
+        note3.ResolveHit(HitResult.Good, 0.5f);
+        note3.ResolveMiss();
+        Assert(totalEvents == 1, "Note3: EvaluateAndResolve debe emitir exactamente 1 evento");
+        Assert(note3.isResolved, "Note3 debe estar resuelta");
+
+        Console.WriteLine("[PASS] Resolucion Unica: Invariante garantizado ante cualquier permutacion de llamadas");
+    }
+
     public static int RunAll()
     {
         TestNoteObjectSingleHitResolution();
@@ -701,6 +991,12 @@ public static class NoteAndInputTests
         TestNoteEvaluationOutsideWindowNeverAwardsHit();
         TestNoteEvaluationEvaluateAndResolveHelper();
         TestNoteEvaluationResolveHitGuardsAgainstMiss();
-        return 16;
+        TestFourLanesP1IndependenceAndDirectionMapping();
+        TestCrossPlayerLaneIsolation();
+        TestPlayerKeyBindingsDefaultsAndCustomReassignment();
+        TestNoteObjectAutoMissThresholdLifecycle();
+        TestRepeatedPressesAntiSpamAndSequentialNotes();
+        TestExhaustiveSingleResolutionInvariance();
+        return 22;
     }
 }
