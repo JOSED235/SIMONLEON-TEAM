@@ -244,3 +244,10 @@
 - Tarea: Configurar el asset "background" como fondo visual del nivel en la escena de Unity.
 - Archivos modificados: N/A (Configuracion directa en la escena de Unity).
 - Resumen: Se instruyo al usuario sobre como integrar el asset 2D de fondo en la jerarquia, ajustar su `Order in Layer` para evitar superposicion con los personajes/UI, y escalar su tamaño para que cubra completamente el espacio de juego visible por la camara principal.
+
+## 2026-10-10 - Sistema de Previsualizacion de Canciones en UI
+- Tarea: Implementar logica de backend para escuchar un adelanto de la cancion en la pantalla de seleccion de nivel al hacer hover (con mouse o teclado).
+- Archivos creados:
+  - `Party Potato/Assets/Scripts/UI/SongSelectionManager.cs`
+  - `Party Potato/Assets/Scripts/UI/SongSelectionButton.cs`
+- Resumen: Se desarrollaron dos scripts enfocados en UI. `SongSelectionManager` es un Singleton que administra un AudioSource dinamico y usa corrutinas para aplicar efectos de "Fade In" y "Fade Out" al cambiar de pista. `SongSelectionButton` se ancla a los botones de nivel e implementa las interfaces nativas de Unity (IPointerEnterHandler, ISelectHandler, etc.) para detectar interacciones tanto de raton como de teclado/mando. Incluye la funcionalidad de elegir el minuto/segundo de inicio (startTime) para saltar la intro de la cancion. Todo el modulo quedo listo para ser integrado en la escena desde el editor de Unity.
