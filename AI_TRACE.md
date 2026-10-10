@@ -244,3 +244,39 @@
 - Tarea: Configurar el asset "background" como fondo visual del nivel en la escena de Unity.
 - Archivos modificados: N/A (Configuracion directa en la escena de Unity).
 - Resumen: Se instruyo al usuario sobre como integrar el asset 2D de fondo en la jerarquia, ajustar su `Order in Layer` para evitar superposicion con los personajes/UI, y escalar su tamaño para que cubra completamente el espacio de juego visible por la camara principal.
+
+## 2026-10-10 - Creacion de la Escena de Menu Principal
+- Participante: Faiber Piedrahita
+- Tarea: Iniciar la configuracion del Menu Principal del juego.
+- Archivos modificados: N/A
+- Resumen: Se instruyo al usuario en la creacion de una nueva escena `MainMenu` en Unity. Se explico el proceso de diseño de la interfaz (Botones de Jugar y Salir) y el uso del script existente `SceneLoader.cs` para manejar las transiciones de escena y la salida del juego a traves de eventos `OnClick`.
+
+## 2026-10-10 - Interfaz Visual del Menu (Basado en Mockup)
+- Participante: Faiber Piedrahita
+- Tarea: Estructurar la interfaz visual del menu basandose en el mockup (Fondo degradado fucsia, Logo de Beat Potato, boton de Play, Disco girando y Chica Guitarra).
+- Archivos creados:
+  - Party Potato/Assets/Scripts/UI/Rotator.cs
+- Resumen: Se analizo la imagen de referencia provista por el usuario. Se ignoro el boton de Settings segun la instruccion. Se creo un script utilitario `Rotator.cs` para permitir que el disco de vinilo en la interfaz de usuario gire constantemente en el eje Z. Se dieron instrucciones para acomodar el Logo, la chica, y aplicar los colores base.
+
+## 2026-10-10 - Detalles Finales del Menu (Musica y Flechas)
+- Participante: Faiber Piedrahita
+- Tarea: Añadir la musica de fondo (`menu_theme.wav`) en bucle y crear el efecto de flechas aleatorias apareciendo y desapareciendo por el menu.
+- Archivos creados:
+  - Party Potato/Assets/Scripts/UI/BlinkingUI.cs
+- Resumen: Se desarrollo el script `BlinkingUI.cs` usando corrutinas para manejar el ciclo de vida de imagenes en la interfaz (espera aleatoria, fade in, duracion visible, fade out). Se brindaron las instrucciones para aplicar este script a las flechas decorativas y para configurar un componente `AudioSource` basico en la escena del menu para la reproduccion en bucle de la pista de audio.
+
+## 2026-10-10 - Arreglos de Menu: Drifting, Musica y Boton Play
+- Participante: Faiber Piedrahita
+- Tarea: Agregar movimiento a las flechas decorativas, ayudar a depurar la musica y facilitar el uso del boton Play.
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/UI/BlinkingUI.cs
+  - Party Potato/Assets/Scripts/Minigame/SceneLoader.cs
+- Resumen: Se actualizo `BlinkingUI.cs` para incluir un efecto de deslizamiento (`driftDirection`) mientras el elemento esta visible, regresando a su posicion original antes del siguiente Fade In. Se actualizo `SceneLoader.cs` añadiendo un metodo especifico `LoadGameScene()` sin parametros para evitar problemas de configuracion del inspector al asignar el OnClick en el boton Play. Se dieron instrucciones para revisar el mute del editor para arreglar la falta de audio.
+
+## 2026-10-10 - Ritmo Dinámico y Delay Musical (Canción "Coffee" de BTS)
+- Participante: Faiber Piedrahita
+- Tarea: Cambiar el BPM a 92 para sincronizar con la nueva canción, implementar un delay de 2 segundos antes de iniciar el ritmo y generar un spawner progresivo/aleatorio sin comprometer la sincronización multijugador.
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Rhythm/RhythmManager.cs
+  - Party Potato/Assets/Scripts/Rhythm/NoteSpawner.cs
+- Resumen: Se actualizó `RhythmManager.cs` estableciendo `songBpm = 92f` e implementando un `startDelay = 2.0f` que ajusta el `dspSongTime` e inicia la música con `PlayDelayed(startDelay)`. En `NoteSpawner.cs` se reemplazó el sistema rígido (múltiplos fijos) por fases progresivas: Beats 1-16 (baja densidad, notas simples espaciadas), Beats 16-32 (densidad media, notas simples/dobles) y Beats >32 (acordes aleatorios, silencios y combinaciones dinámicas). Se garantizó la sincronización multijugador usando `Random.InitState` alimentado con el número del beat y una semilla constante (12345) antes de cada evaluación de generación de notas, asegurando que ambos Spawners generen pistas idénticas.

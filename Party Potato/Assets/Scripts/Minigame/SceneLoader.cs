@@ -3,6 +3,15 @@ using UnityEngine.SceneManagement;
 
 public class SceneLoader : MonoBehaviour
 {
+    [Header("Escena Principal")]
+    public string defaultGameScene = "SampleScene";
+
+    // Carga la escena configurada por defecto
+    public void LoadGameScene()
+    {
+        SceneManager.LoadScene(defaultGameScene);
+    }
+
     // Carga una escena específica por su nombre
     public void LoadSceneByName(string sceneName)
     {

@@ -1044,8 +1044,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a5362e3d9d87e054bb6baa37ecfb276b, type: 3}
-  m_Type: 0
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1078,7 +1078,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 3.9, y: 1.3}
+  m_AnchoredPosition: {x: 10.04, y: 0.44}
   m_SizeDelta: {x: 30, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &499402223
@@ -1503,8 +1503,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 5, y: 17}
-  m_SizeDelta: {x: 30, y: -14.299999}
+  m_AnchoredPosition: {x: 5, y: 2.13}
+  m_SizeDelta: {x: 23, y: -5.549999}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &690685507
 MonoBehaviour:
@@ -2063,6 +2063,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RhythmManager
   songBpm: 117
+  startDelay: 2
   perfectWindow: 0.045
   goodWindow: 0.09
   badWindow: 0.135
@@ -2752,7 +2753,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 3661d075433b2b2478b4f3ba4b48dac8, type: 3}
+  m_Resource: {fileID: 8300000, guid: ba5a794153a24d34496d55d1f989c7a1, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1

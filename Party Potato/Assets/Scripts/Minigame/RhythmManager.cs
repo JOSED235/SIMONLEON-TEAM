@@ -5,7 +5,8 @@ public class RhythmManager : MonoBehaviour
     public static RhythmManager Instance;
 
     [Header("Configuración de la Pista")]
-    public float songBpm = 117f; 
+    public float songBpm = 92f; // BPM de Coffee - BTS
+    public float startDelay = 2.0f; // Tiempo de espera antes de iniciar la música y notas
     
     [Header("Ventanas de Precisión (en Segundos)")]
     public float perfectWindow = 0.045f; // 45ms
@@ -32,11 +33,13 @@ public class RhythmManager : MonoBehaviour
     private void Start()
     {
         secPerBeat = 60f / songBpm;
-        dspSongTime = (float)AudioSettings.dspTime;
+        
+        // Se suma el retraso al tiempo base para que la posición de la canción comience en negativo
+        dspSongTime = (float)AudioSettings.dspTime + startDelay;
         
         if (musicSource != null)
         {
-            musicSource.Play();
+            musicSource.PlayDelayed(startDelay);
         }
     }
 
