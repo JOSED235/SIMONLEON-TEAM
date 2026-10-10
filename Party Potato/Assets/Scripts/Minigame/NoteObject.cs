@@ -42,9 +42,17 @@ public class NoteObject : MonoBehaviour
         // Si pasa la zona de impacto y el jugador no la tocó (ej. progress > 1.2)
         if (progress > 1.2f)
         {
-            Debug.Log($"¡Nota del Beat {beatOfThisNote} perdida! (Miss)");
-            // TODO: Notificar al sistema que se rompió la racha/combo
+            if (mySpawner != null)
+            {
+                PlayerInputController playerInput = mySpawner.GetComponent<PlayerInputController>();
+                if (playerInput != null)
+                {
+                    playerInput.RegisterPassiveMiss(laneID);
+                }
+            }
             Destroy(gameObject);
         }
+
     }
 }
+

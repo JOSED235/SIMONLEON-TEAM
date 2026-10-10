@@ -1,0 +1,12 @@
+﻿        if (progress > 1.2f)
+        {
+            if (mySpawner != null)
+            {
+                PlayerInputController playerInput = mySpawner.GetComponent<PlayerInputController>();
+                if (playerInput != null)
+                {
+                    playerInput.RegisterPassiveMiss(laneID);
+                }
+            }
+            Destroy(gameObject);
+        }

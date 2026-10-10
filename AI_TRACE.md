@@ -164,3 +164,18 @@
 - Archivos modificados:
   - `Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs`
 - Resumen: Se actualizó el sistema de feedback visual. Además de cambiar de color el SpriteRenderer (rojo para fallos, cyan/verde para aciertos), se implementó un efecto de "Pop" o salto (interpolación de escala usando `Vector3.Lerp`). Se añadió la variable pública `popScaleMultiplier` para ajustar la intensidad del salto desde el Inspector.
+## 2026-10-10 - Sistema de Palabras Flotantes (Feedback Visual)
+- Participante: Faiber Piedrahita
+- Tarea: Crear un sistema para mostrar palabras de feedback ("Perfect", "Miss") como pop-ups por encima del jugador.
+- Archivos creados:
+  - Party Potato/Assets/Scripts/Minigame/FeedbackWord.cs
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs
+- Resumen: Se programo el script FeedbackWord que recibe un sprite, hace una animacion de Pop-up (escalado), flota hacia arriba de manera fluida usando delta time, y despues de cierta duracion se desvanece cambiando su canal Alpha antes de destruirse. En PlayerInputController se agrego la logica SpawnFeedbackWord para instanciar el prefab correcto y pasarle el sprite adecuado segun la precision (HitResult) al jugar las notas.
+## 2026-10-10 - Registro de Miss Pasivo (Notas ignoradas)
+- Participante: Faiber Piedrahita
+- Tarea: Permitir que si una nota pasa la zona de impacto sin ser presionada, el juego lo registre como Miss, reinicie el combo, muestre el feedback visual rojo en la zona y spawnee el texto "Miss".
+- Archivos modificados:
+  - Party Potato/Assets/Scripts/Minigame/NoteObject.cs
+  - Party Potato/Assets/Scripts/Minigame/PlayerInputController.cs
+- Resumen: Se actualizo NoteObject.cs para que, en lugar de destruirse silenciosamente al superar el progreso de 1.2f, se comunique con el PlayerInputController del jugador correspondiente invocando el nuevo metodo RegisterPassiveMiss(laneID). Este metodo reinicia el combo, aplica el destello rojo con efecto Pop al HitZone especifico, instancia la palabra flotante de "Miss" y dispara los eventos globales OnPlayerMiss y OnNoteMiss para actualizar el calor de la papa y la animacion de error del personaje.

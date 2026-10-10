@@ -1,0 +1,8 @@
+﻿    public void RegisterPassiveMiss(int laneID)
+    {
+        combo = 0;
+        FlashHitZone(laneID, Color.red);
+        SpawnFeedbackWord(HitResult.Miss);
+        GameEvents.TriggerPlayerMiss(playerID);
+        GameEvents.TriggerNoteMiss(playerID, laneID);
+    }

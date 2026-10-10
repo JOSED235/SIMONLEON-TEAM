@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -25,8 +25,24 @@ public class PlayerInputController : MonoBehaviour
     public Color defaultColor = Color.white; 
     public float popScaleMultiplier = 1.3f; // Que tan grande se hace el hitzone al presionarlo
     
+    [Header("Palabras de Feedback (Perfect, Miss...)")]
+    public GameObject feedbackWordPrefab;
+    public Transform feedbackSpawnPoint;
+    public Sprite perfectSprite;
+    public Sprite goodSprite;
+    public Sprite badSprite;
+    public Sprite missSprite;
+
     [Header("Estado del Jugador")]
     public int combo = 0;
+    public int score = 0;
+
+    [Header("Puntuacion por Nota")]
+    public int scorePerfect = 100;
+    public int scoreGood = 50;
+    public int scoreBad = 10;
+    public int comboBonusMultiplier = 5;
+
 
     [Header("Optimizacin (Cero Lag)")]
     [Tooltip("El Spawner que genera las notas para este jugador")]
@@ -145,6 +161,7 @@ public class PlayerInputController : MonoBehaviour
                 // Brillo visual dependiendo de la calidad del golpe
                 Color flashColor = result == HitResult.Perfect ? perfectColor : (result == HitResult.Good ? goodColor : badColor);
                 FlashHitZone(pressedLaneID, flashColor);
+                SpawnFeedbackWord(result);
                 
                 GameEvents.TriggerHitResolved(playerID, result, closestDistance);
                 Destroy(closestNote.gameObject);
@@ -154,6 +171,7 @@ public class PlayerInputController : MonoBehaviour
                 Debug.Log($"[{playerName}] MISS (Cerca de la caja, pero fuera de ritmo). Rompi el combo.");
                 combo = 0;
                 FlashHitZone(pressedLaneID, Color.red); // Flash ROJO para indicar el fallo
+                SpawnFeedbackWord(HitResult.Miss);
                 GameEvents.TriggerPlayerMiss(playerID);
             }
         }
@@ -161,6 +179,7 @@ public class PlayerInputController : MonoBehaviour
         {
             combo = 0; // Spam = Pierde combo
             FlashHitZone(pressedLaneID, Color.gray); // Flash GRIS para indicar spam
+            SpawnFeedbackWord(HitResult.Miss);
             GameEvents.TriggerPlayerMiss(playerID);
         }
     }
@@ -200,4 +219,39 @@ public class PlayerInputController : MonoBehaviour
             }
         }
     }
+
+    private void SpawnFeedbackWord(HitResult result)
+    {
+        if (feedbackWordPrefab == null || feedbackSpawnPoint == null) return;
+
+        GameObject fwObj = Instantiate(feedbackWordPrefab, feedbackSpawnPoint.position, Quaternion.identity);
+        FeedbackWord fw = fwObj.GetComponent<FeedbackWord>();
+        if (fw != null)
+        {
+            Sprite spriteToUse = null;
+            switch (result)
+            {
+                case HitResult.Perfect: spriteToUse = perfectSprite; break;
+                case HitResult.Good: spriteToUse = goodSprite; break;
+                case HitResult.Bad: spriteToUse = badSprite; break;
+                case HitResult.Miss: spriteToUse = missSprite; break;
+            }
+            if (spriteToUse != null)
+            {
+                fw.SetSprite(spriteToUse);
+            }
+        }
+    }
+
+
+    public void RegisterPassiveMiss(int laneID)
+    {
+        combo = 0;
+        FlashHitZone(laneID, Color.red);
+        SpawnFeedbackWord(HitResult.Miss);
+        GameEvents.TriggerPlayerMiss(playerID);
+        GameEvents.TriggerNoteMiss(playerID, laneID);
+    }
+
 }
+

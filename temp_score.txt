@@ -1,0 +1,9 @@
+﻿    [Header("Estado del Jugador")]
+    public int combo = 0;
+    public int score = 0;
+
+    [Header("Puntuacion por Nota")]
+    public int scorePerfect = 100;
+    public int scoreGood = 50;
+    public int scoreBad = 10;
+    public int comboBonusMultiplier = 5;
