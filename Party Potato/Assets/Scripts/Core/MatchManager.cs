@@ -32,6 +32,7 @@ public class MatchManager : MonoBehaviour
     public GameMode CurrentGameMode { get { return gameMode; } set { gameMode = value; } }
 
     private Coroutine roundTransitionCoroutine;
+    private int beatsElapsedInCountdown = 0;
 
     private void Awake()
     {
@@ -57,18 +58,35 @@ public class MatchManager : MonoBehaviour
     {
         GameEvents.OnPotatoExploded += HandlePotatoExploded;
         GameEvents.OnMatchReset += HandleMatchReset;
+        GameEvents.OnBeat += HandleBeat;
     }
 
     private void OnDisable()
     {
         GameEvents.OnPotatoExploded -= HandlePotatoExploded;
         GameEvents.OnMatchReset -= HandleMatchReset;
+        GameEvents.OnBeat -= HandleBeat;
     }
 
     private void Start()
     {
         // Iniciar la partida automáticamente al cargar la escena
         StartMatch();
+    }
+
+    private void HandleBeat(int beatIndex)
+    {
+        if (currentState == MatchState.Countdown)
+        {
+            beatsElapsedInCountdown++;
+            int requiredBeats = (config != null) ? config.countdownBeats : 4;
+            
+            if (beatsElapsedInCountdown >= requiredBeats)
+            {
+                currentState = MatchState.Playing;
+                Debug.Log("[MatchManager] ¡Partida en curso! Ambos jugadores en ritmo.");
+            }
+        }
     }
 
     /// <summary>
@@ -96,21 +114,11 @@ public class MatchManager : MonoBehaviour
         }
 
         currentState = MatchState.Countdown;
+        beatsElapsedInCountdown = 0;
 
-        Debug.Log(string.Format("[MatchManager] Ronda {0} iniciando.", currentRound));
+        int waitBeats = (config != null) ? config.countdownBeats : 4;
+        Debug.Log(string.Format("[MatchManager] Ronda {0} iniciando. Esperando {1} beats...", currentRound, waitBeats));
         GameEvents.TriggerRoundStarted(currentRound);
-
-        // Iniciar la cuenta regresiva antes de habilitar las notas
-        roundTransitionCoroutine = StartCoroutine(CountdownRoutine());
-    }
-
-    private IEnumerator CountdownRoutine()
-    {
-        // Pausa simulando conteo inicial (ej. 3, 2, 1, ¡GO!)
-        yield return new WaitForSeconds(1.5f);
-
-        currentState = MatchState.Playing;
-        Debug.Log("[MatchManager] ¡Partida en curso! Ambos jugadores en ritmo.");
     }
 
     /// <summary>

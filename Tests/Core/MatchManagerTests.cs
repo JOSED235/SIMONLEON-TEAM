@@ -106,15 +106,23 @@ public static class MatchManagerTests
 
     private static void TestCountdownTransition()
     {
+        // GameConfig default: countdownBeats = 4
         MatchManager manager = CreateManager(CreateConfig(3));
         manager.StartMatch();
-        Coroutine countdown = (Coroutine)GetField(manager, "roundTransitionCoroutine");
 
-        AssertEqual(MatchState.Countdown, manager.CurrentState, "StartMatch did not keep the countdown active.");
-        AssertTrue(countdown.MoveNext(), "Countdown coroutine ended before its wait.");
-        AssertEqual(MatchState.Countdown, manager.CurrentState, "Countdown ended before the wait completed.");
-        AssertTrue(!countdown.MoveNext(), "Countdown coroutine should finish after transitioning to Playing.");
-        AssertEqual(MatchState.Playing, manager.CurrentState, "Countdown did not transition to Playing.");
+        AssertEqual(MatchState.Countdown, manager.CurrentState, "StartMatch did not enter Countdown state.");
+
+        // Fire beats 0, 1, 2 — still counting down (need 4 beats total)
+        for (int i = 0; i < 3; i++)
+        {
+            GameEvents.TriggerBeat(i);
+            AssertEqual(MatchState.Countdown, manager.CurrentState,
+                "Countdown ended too early after beat " + i + ".");
+        }
+
+        // Fire beat 3 — the 4th beat, should transition to Playing
+        GameEvents.TriggerBeat(3);
+        AssertEqual(MatchState.Playing, manager.CurrentState, "Countdown did not transition to Playing after countdownBeats.");
     }
 
     private static void TestPotatoExplosionAwardsPoint()

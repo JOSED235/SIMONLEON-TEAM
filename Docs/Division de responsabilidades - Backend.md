@@ -76,11 +76,11 @@ Responsable principal de convertir los resultados ritmicos en el ciclo de riesgo
    - Alinear `GameEnums.cs`, `GameEvents.cs` y `GameConfig.cs` con el GDD vigente. (COMPLETADO)
    - Documentar el significado y los consumidores de cada evento antes de anadir o cambiar una firma. (COMPLETADO)
    - Evitar duplicar en Core la evaluacion temporal que pertenece al flujo de ritmo/entrada. (COMPLETADO)
-2. **Completar `MatchManager.cs`.**
-   - Iniciar y finalizar rondas usando los eventos del bus; otorgar el punto al contrario del jugador que recibe la explosion.
-   - Respetar la cuenta regresiva, el objetivo de rondas y los retrasos configurados.
-   - Ignorar resoluciones duplicadas o eventos recibidos fuera del estado valido.
-   - Reiniciar puntajes y estado al pedir revancha.
+2. **Completar `MatchManager.cs`. (COMPLETADO)**
+   - Iniciar y finalizar rondas usando los eventos del bus; otorgar el punto al contrario del jugador que recibe la explosion. (COMPLETADO)
+   - Respetar la cuenta regresiva, el objetivo de rondas y los retrasos configurados. (COMPLETADO)
+   - Ignorar resoluciones duplicadas o eventos recibidos fuera del estado valido. (COMPLETADO)
+   - Reiniciar puntajes y estado al pedir revancha. (COMPLETADO)
 3. **Crear `PotatoHeatSystem.cs` e integrar la papa. (COMPLETADO)**
    - Acumular el calor por jugador segun los fallos y valores de `GameConfig`; informar cambios normalizados para UI/audio. (COMPLETADO)
    - Restablecer o reducir calor de acuerdo con las reglas acordadas para los golpes y poderes. (COMPLETADO)
