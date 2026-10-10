@@ -8,6 +8,7 @@ public class PlayerInputController : MonoBehaviour
 {
     [Header("Identificación")]
     public string playerName = "Jugador 1";
+    public PlayerID playerID = PlayerID.Player1;
     
     [Header("Mapeo de Teclas (Solo Sistema Viejo)")]
     public KeyCode keyLeft = KeyCode.LeftArrow;
@@ -124,6 +125,7 @@ public class PlayerInputController : MonoBehaviour
                 Color flashColor = result == HitResult.Perfect ? perfectColor : (result == HitResult.Good ? goodColor : badColor);
                 FlashHitZone(pressedLaneID, flashColor);
                 
+                GameEvents.TriggerHitResolved(playerID, result, closestDistance);
                 Destroy(closestNote.gameObject);
             }
             else
@@ -131,12 +133,14 @@ public class PlayerInputController : MonoBehaviour
                 Debug.Log($"[{playerName}] MISS (Cerca de la caja, pero fuera de ritmo). Rompió el combo.");
                 combo = 0;
                 FlashHitZone(pressedLaneID, Color.red); // Flash ROJO para indicar el fallo
+                GameEvents.TriggerPlayerMiss(playerID);
             }
         }
         else
         {
             combo = 0; // Spam = Pierde combo
             FlashHitZone(pressedLaneID, Color.gray); // Flash GRIS para indicar que presionaste sin haber notas cerca
+            GameEvents.TriggerPlayerMiss(playerID);
         }
     }
 

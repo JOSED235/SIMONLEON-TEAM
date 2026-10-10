@@ -1,7 +1,5 @@
 using UnityEngine;
 
-public enum HitResult { Perfect, Good, Bad, Miss }
-
 public class RhythmManager : MonoBehaviour
 {
     public static RhythmManager Instance;

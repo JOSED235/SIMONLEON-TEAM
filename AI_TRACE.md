@@ -282,3 +282,9 @@
   - `Tests/run-rhythm-tests.ps1`
 - Resumen: El backend completo (105 pruebas unitarias: 65 Core + 40 Rhythm/AI/Input) queda integrado en develop, coexistiendo con los assets de Unity (SampleScene, prefabs, SceneRebuilder, PlayerInputController legacy). La rama develop queda lista para que Faiber conecte los nuevos scripts en la escena principal.
 - Limitaciones: Falta conectar GameEvents, MatchManager, PotatoHeatSystem, ComboSystem y PowerUpManager en la escena Main.unity. PlayerInputController.cs (legacy de develop) puede coexistir pero debe reemplazarse por PlayerInput.cs del backend para el flujo de eventos.
+
+## 2026-10-10 - Interfaz de Presion (Slider UI)
+- Participante: Faiber Piedrahita
+- Tarea: Crear representacion visual del medidor de presion de la papa mediante un Slider de Unity.
+- Archivos creados: Party Potato/Assets/Scripts/Minigame/PressureMeterUI.cs
+- Resumen: Se implemento un script que lee el currentPressure del HotPotatoPressureMeter y suaviza el movimiento de un Slider en la UI (Lerp), ademas de interpolar el color de amarillo a rojo segun el riesgo de explosion.
